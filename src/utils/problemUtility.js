@@ -47,6 +47,12 @@ async function fetchData() {
 
 }
 
+const waiting = async(timer)=>{
+  setTimeout(()=>{
+    return 1;
+  },timer);
+}
+
 const submitToken=async(resultToken)=>{
     
 
@@ -73,10 +79,19 @@ async function fetchData() {
 	}
 }
 
-const result=await fetchData();
-const isResultObtained=result.submissions.every((r)=>r.status_id>2);
-if(isResultObtained)
+ while(true){
+
+ const result =  await fetchData();
+
+  const IsResultObtained =  result.submissions.every((r)=>r.status_id>2);
+
+  if(IsResultObtained)
     return result.submissions;
+
+  
+  await waiting(1000);
+}
+
 
 
 
