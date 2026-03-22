@@ -23,19 +23,19 @@ const submitRouter  = require('./src/routes/submit');
 const aiRouter      = require('./src/routes/aiChatting');
 const videoRouter   = require('./src/routes/videoCreator');
 const profileRouter = require('./src/routes/profile');
-const duelRouter    = require('./src/routes/duel');          // ← new
-const duelHandler   = require('./src/socket/duelHandler');   // ← new
+const duelRouter    = require('./src/routes/duel');
+const agentRouter   = require('./src/routes/agent');   // ← Code Execution Agent
+const hintRouter    = require('./src/routes/hint');    // ← AI Hints
+const duelHandler   = require('./src/socket/duelHandler');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const User = require('./src/models/user');
-const hintRouter = require('./src/routes/hint');
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
     : ['http://localhost:5174'];
 
 // ── HTTP server + Socket.io ───────────────────────────────────────────────────
-// We wrap Express in a plain http.Server so Socket.io can share the same port.
 
 const server = http.createServer(app);
 
@@ -47,8 +47,6 @@ const io = new Server(server, {
 });
 
 // ── Socket.io auth middleware ─────────────────────────────────────────────────
-// Reads the JWT from the handshake auth token (sent by the client as
-// socket = io({ auth: { token } }) ) and attaches the user to socket.user.
 
 io.use(async (socket, next) => {
     try {
@@ -91,8 +89,9 @@ app.use('/submission', submitRouter);
 app.use('/ai',         aiRouter);
 app.use('/video',      videoRouter);
 app.use('/profile',    profileRouter);
-app.use('/duel',       duelRouter);    // ← new
-app.use('/hint', hintRouter);
+app.use('/duel',       duelRouter);
+app.use('/agent',      agentRouter);   // ← Code Execution Agent
+app.use('/hint',       hintRouter);    // ← AI Hints
 
 // ── Global error handler ──────────────────────────────────────────────────────
 
@@ -121,7 +120,6 @@ const initializeConnection = async () => {
         console.warn('[Redis] To enable: install Redis (brew install redis && brew services start redis)');
     }
 
-    // Use server.listen instead of app.listen so Socket.io shares the port
     server.listen(process.env.PORT || 3000, () => {
         console.log(`Server listening on port ${process.env.PORT || 3000}`);
     });
