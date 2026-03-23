@@ -52,6 +52,13 @@ const problemSchema = new Schema({
         required: true,
     },
 
+    // ── Constraints ──────────────────────────────────────────────────────────
+    // List of constraint strings e.g. ["1 <= n <= 10^5", "0 <= nums[i] <= 10^4"]
+    constraints: {
+        type: [String],
+        default: [],
+    },
+
     // ── Duel points ───────────────────────────────────────────────────────────
     // Set by admin. Awarded in full on AC. Suggested: easy=100, medium=200, hard=300
     points: {
