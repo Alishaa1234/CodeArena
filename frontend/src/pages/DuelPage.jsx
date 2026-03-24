@@ -1,3 +1,6 @@
+/* PAGE: DuelPage
+   PURPOSE: The primary container for the 1v1 competitive coding environment.
+*/
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";

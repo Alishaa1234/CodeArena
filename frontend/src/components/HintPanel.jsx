@@ -1,3 +1,7 @@
+/* COMPONENT: HintPanel
+   PURPOSE: A slide-out or toggleable panel that provides progressive hints to the user.
+*/
+
 import { useState } from "react";
 import axiosClient from "../utils/axiosClient";
 import { Lightbulb, ChevronDown, ChevronUp, Lock } from "lucide-react";

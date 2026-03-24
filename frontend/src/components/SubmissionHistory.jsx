@@ -1,3 +1,7 @@
+/* COMPONENT: SubmissionHistory
+   PURPOSE: Fetches and displays a list of previous code submissions or user actions.
+*/
+
 import { useState, useEffect } from "react";
 import axiosClient from "../utils/axiosClient";
 import { CheckCircle2, XCircle, AlertCircle, Clock, MemoryStick, X } from "lucide-react";

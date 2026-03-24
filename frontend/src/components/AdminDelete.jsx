@@ -1,3 +1,8 @@
+/* COMPONENT: AdminDelete
+   PURPOSE: Handles the logic and UI for deleting records or users from the database.
+   SECURITY: Restricted to Admin-level users only.
+*/
+
 import { useEffect, useState } from "react";
 import axiosClient from "../utils/axiosClient";
 import { Trash2, AlertTriangle } from "lucide-react";

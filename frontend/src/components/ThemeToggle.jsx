@@ -1,3 +1,7 @@
+/* COMPONENT: ThemeToggle
+   PURPOSE: Switcher for Light Mode / Dark Mode across the entire application.
+*/
+
 import useTheme from '../hooks/useTheme';
 import { Sun, Moon } from 'lucide-react';
 

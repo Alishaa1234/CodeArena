@@ -1,3 +1,8 @@
+/* COMPONENT: AdminLayout
+   PURPOSE: The structural wrapper (Sidebar/Navbar) for all admin-facing pages.
+   CONTAINS: Shared navigation elements for the dashboard.
+*/
+
 import { NavLink } from "react-router";
 import { ArrowLeft, Code2 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";

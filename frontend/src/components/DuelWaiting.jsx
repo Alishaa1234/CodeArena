@@ -1,3 +1,7 @@
+/* COMPONENT: DuelWaiting
+   PURPOSE: The screen users see while searching for an opponent or waiting for a match to initialize.
+*/
+
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router";

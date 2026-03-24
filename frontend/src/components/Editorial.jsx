@@ -1,3 +1,7 @@
+/* COMPONENT: Editorial
+   PURPOSE: Displays official solutions, explanations, or articles related to coding problems.
+*/
+
 import { useState, useRef, useEffect } from "react";
 import { Play, Pause, Volume2, VolumeX, Maximize2 } from "lucide-react";
 

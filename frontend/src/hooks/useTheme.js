@@ -1,3 +1,7 @@
+/* HOOK: useTheme
+   PURPOSE: Custom hook to manage and provide the current theme state (Light/Dark) across the app.
+*/
+
 import { useState, useEffect } from 'react';
 
 export default function useTheme() {

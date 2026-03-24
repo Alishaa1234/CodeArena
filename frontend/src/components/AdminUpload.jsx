@@ -1,3 +1,7 @@
+/* COMPONENT: AdminUpload
+   PURPOSE: Provides a drag-and-drop or file-select interface for uploading new assets/content.
+*/
+
 import { useParams } from "react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";

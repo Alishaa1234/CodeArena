@@ -1,3 +1,7 @@
+/* PAGE: Login / Signup
+   PURPOSE: Handles user authentication, session creation, and new account registration.
+*/
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";

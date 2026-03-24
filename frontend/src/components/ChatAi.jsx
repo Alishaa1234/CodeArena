@@ -1,3 +1,7 @@
+/* COMPONENT: ChatAi
+   PURPOSE: Interface for the AI assistant. Handles message streaming and user prompts.
+*/
+
 import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import axiosClient from "../utils/axiosClient";

@@ -1,3 +1,7 @@
+/* PAGE: ProfilePage
+   PURPOSE: Displays user statistics, solved problems, and account settings.
+*/
+
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router";
 import { useDispatch, useSelector } from "react-redux";

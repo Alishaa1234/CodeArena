@@ -1,3 +1,8 @@
+/* COMPONENT: AdminVideo
+   PURPOSE: Manages video content, playback settings, or video uploads for the admin panel.
+*/
+
+
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router";
 import axiosClient from "../utils/axiosClient";

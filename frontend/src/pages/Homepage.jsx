@@ -1,3 +1,7 @@
+/* PAGE: Homepage
+   PURPOSE: The landing page of the application where users can see featured content or news.
+*/
+
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";

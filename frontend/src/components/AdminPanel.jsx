@@ -1,3 +1,7 @@
+/* COMPONENT: AdminPanel
+   PURPOSE: Main dashboard view for administrators to monitor system stats and manage features.
+*/
+
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";

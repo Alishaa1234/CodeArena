@@ -1,3 +1,7 @@
+/* PAGE: ProblemPage
+   PURPOSE: The main view for solving an individual coding challenge.
+*/
+
 import { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { useParams, NavLink } from "react-router";

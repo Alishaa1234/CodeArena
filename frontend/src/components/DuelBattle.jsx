@@ -1,3 +1,9 @@
+/* COMPONENT: DuelBattle
+   PURPOSE: The active "Battle" arena interface where two users compete in real-time.
+   LOGIC: Manages timers, health bars, or score updates.
+*/
+
+
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Editor from "@monaco-editor/react";
