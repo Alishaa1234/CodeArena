@@ -28,12 +28,52 @@ const agentRouter   = require('./src/routes/agent');   // ← Code Execution Age
 const hintRouter    = require('./src/routes/hint');    // ← AI Hints
 const duelHandler   = require('./src/socket/duelHandler');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const User = require('./src/models/user');
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
     : ['http://localhost:5174'];
+
+
+// ── Rate limiters ─────────────────────────────────────────────────────────────
+
+// Global — 100 requests per minute per IP
+const globalLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many requests, please slow down.' },
+});
+
+// Auth routes — 10 attempts per 15 minutes (brute force protection)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many login attempts, please try again later.' },
+});
+
+// AI routes — 20 requests per minute (OpenRouter cost protection)
+const aiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'AI rate limit reached, please wait a moment.' },
+});
+
+// Code execution — 30 runs per minute per IP
+const judgeLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many code submissions, please slow down.' },
+});
 
 // ── HTTP server + Socket.io ───────────────────────────────────────────────────
 
@@ -78,20 +118,21 @@ io.on('connection', (socket) => {
 // ── Express middleware ────────────────────────────────────────────────────────
 
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
+app.use(globalLimiter); // Apply global rate limit to all routes
 app.use(express.json());
 app.use(cookieParser());
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
-app.use('/user',       authRouter);
+app.use('/user',       authLimiter, authRouter);   // strict — login/register
 app.use('/problem',    problemRouter);
-app.use('/submission', submitRouter);
-app.use('/ai',         aiRouter);
+app.use('/submission', judgeLimiter, submitRouter); // Judge0 cost protection
+app.use('/ai',         aiLimiter, aiRouter);       // OpenRouter cost protection
 app.use('/video',      videoRouter);
 app.use('/profile',    profileRouter);
 app.use('/duel',       duelRouter);
-app.use('/agent',      agentRouter);   // ← Code Execution Agent
-app.use('/hint',       hintRouter);    // ← AI Hints
+app.use('/agent',      aiLimiter, agentRouter);    // OpenRouter cost protection
+app.use('/hint',       aiLimiter, hintRouter);     // OpenRouter cost protection
 
 // ── Global error handler ──────────────────────────────────────────────────────
 
