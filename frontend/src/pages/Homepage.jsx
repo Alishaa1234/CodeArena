@@ -162,7 +162,7 @@ export default function Homepage() {
       <nav className="hp-nav">
         <NavLink to="/" className="hp-logo">
           <div className="hp-logo-icon"><Code2 size={18} color="#000"/></div>
-          <span className="hp-logo-text">LeetCode</span>
+          <span className="hp-logo-text">CodeArena</span>
         </NavLink>
         <div className="hp-nav-right">
           {user?.role === "admin" && (

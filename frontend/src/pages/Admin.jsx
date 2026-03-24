@@ -43,7 +43,7 @@ export default function Admin() {
         <NavLink to="/" className="adm-back"><ArrowLeft size={14} />Home</NavLink>
         <div className="adm-logo">
           <div className="adm-logo-icon"><Code2 size={16} color="#000" /></div>
-          <span className="adm-logo-text">LeetCode</span>
+          <span className="adm-logo-text">CodeArena</span>
         </div>
         <span className="adm-nav-tag">Admin</span>
         <div style={{ marginLeft: "auto" }}>

@@ -73,7 +73,7 @@ export default function Signup() {
       <div className="lc-card">
         <div className="lc-brand">
           <div className="lc-brand-icon"><Code2 size={20} color="#000" /></div>
-          <span className="lc-brand-name">LeetCode</span>
+          <span className="lc-brand-name">CodeArena</span>
         </div>
         <div className="lc-title">Create account</div>
         <div className="lc-sub">// start your coding journey</div>

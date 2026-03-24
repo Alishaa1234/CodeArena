@@ -262,7 +262,7 @@ export default function ProfilePage() {
                     <div style={{ width:28, height:28, background:"#ffa116", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center" }}>
                         <Code2 size={15} color="#000"/>
                     </div>
-                    <span style={{ fontSize:15, fontWeight:800, color:text }}>LeetCode</span>
+                    <span style={{ fontSize:15, fontWeight:800, color:text }}>CodeArena</span>
                 </div>
                 <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8 }}>
                     {authUser?.role === "admin" && (

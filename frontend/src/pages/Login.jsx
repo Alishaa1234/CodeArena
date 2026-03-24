@@ -271,7 +271,7 @@ export default function Login() {
       <div className="lc-left-panel">
         <div className="lc-brand">
           <div className="lc-brand-icon"><Code2 size={22} color="#000" /></div>
-          <span className="lc-brand-name">LeetCode</span>
+          <span className="lc-brand-name">CodeArena</span>
         </div>
         <div className="lc-hero-title">
           Level up your<br /><span>coding skills.</span>
