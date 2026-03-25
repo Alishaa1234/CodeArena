@@ -65,10 +65,19 @@ export default function AdminPanel() {
   const onSubmit = async (data) => {
     setSubmitting(true);
     try {
-      // Flatten constraints from [{ value }] → ["string"]
       const payload = {
         ...data,
         constraints: (data.constraints || []).map(c => c.value).filter(Boolean),
+        visibleTestCases: data.visibleTestCases.map(tc => ({
+          ...tc,
+          input: tc.input.replace(/\r\n/g, "\n"),
+          output: tc.output.replace(/\r\n/g, "\n"),
+        })),
+        hiddenTestCases: data.hiddenTestCases.map(tc => ({
+          ...tc,
+          input: tc.input.replace(/\r\n/g, "\n"),
+          output: tc.output.replace(/\r\n/g, "\n"),
+        })),
       };
       await axiosClient.post("/problem/create", payload);
       setSubmitted(true);
@@ -194,10 +203,22 @@ export default function AdminPanel() {
                 {remBtn(() => remVis(i))}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                <div><label style={labelStyle}>Input</label><input {...register(`visibleTestCases.${i}.input`)} style={inputStyle} /></div>
-                <div><label style={labelStyle}>Output</label><input {...register(`visibleTestCases.${i}.output`)} style={inputStyle} /></div>
+                {/* ✅ FIXED: input → textarea */}
+                <div>
+                  <label style={labelStyle}>Input</label>
+                  <textarea {...register(`visibleTestCases.${i}.input`)} rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+                </div>
+                {/* ✅ FIXED: input → textarea */}
+                <div>
+                  <label style={labelStyle}>Output</label>
+                  <textarea {...register(`visibleTestCases.${i}.output`)} rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+                </div>
               </div>
-              <div><label style={labelStyle}>Explanation</label><input {...register(`visibleTestCases.${i}.explanation`)} style={inputStyle} /></div>
+              {/* ✅ FIXED: input → textarea */}
+              <div>
+                <label style={labelStyle}>Explanation</label>
+                <textarea {...register(`visibleTestCases.${i}.explanation`)} rows={2} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+              </div>
             </div>
           ))}
         </div>
@@ -215,8 +236,16 @@ export default function AdminPanel() {
                 {remBtn(() => remHid(i))}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div><label style={labelStyle}>Input</label><input {...register(`hiddenTestCases.${i}.input`)} style={inputStyle} /></div>
-                <div><label style={labelStyle}>Output</label><input {...register(`hiddenTestCases.${i}.output`)} style={inputStyle} /></div>
+                {/* ✅ FIXED: input → textarea */}
+                <div>
+                  <label style={labelStyle}>Input</label>
+                  <textarea {...register(`hiddenTestCases.${i}.input`)} rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+                </div>
+                {/* ✅ FIXED: input → textarea */}
+                <div>
+                  <label style={labelStyle}>Output</label>
+                  <textarea {...register(`hiddenTestCases.${i}.output`)} rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+                </div>
               </div>
             </div>
           ))}

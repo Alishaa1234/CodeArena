@@ -1,7 +1,3 @@
-/* PAGE: ProblemPage
-   PURPOSE: The main view for solving an individual coding challenge.
-*/
-
 import { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { useParams, NavLink } from "react-router";
@@ -38,18 +34,17 @@ const TABS = [
 
 export default function ProblemPage() {
   const { problemId } = useParams();
-  // Sync with global theme toggle via DOM class
   const [isDark, setIsDark] = useState(
-      !document.documentElement.classList.contains('light')
+    !document.documentElement.classList.contains('light')
   );
   useEffect(() => {
-      const observer = new MutationObserver(() => {
-          setIsDark(!document.documentElement.classList.contains('light'));
-      });
-      observer.observe(document.documentElement, {
-          attributes: true, attributeFilter: ['class']
-      });
-      return () => observer.disconnect();
+    const observer = new MutationObserver(() => {
+      setIsDark(!document.documentElement.classList.contains('light'));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true, attributeFilter: ['class']
+    });
+    return () => observer.disconnect();
   }, []);
 
   const [problem,      setProblem]      = useState(null);
@@ -68,7 +63,6 @@ export default function ProblemPage() {
   const [reviewing,    setReviewing]    = useState(false);
   const editorRef = useRef(null);
 
-  // Fetch problem
   useEffect(() => {
     const fetchProblem = async () => {
       setPageLoading(true);
@@ -133,12 +127,18 @@ export default function ProblemPage() {
     return false;
   };
 
-  const CONSOLE_HEIGHT = consoleOpen ? 260 : 0;
-  const editorH = `calc(100vh - 46px - 40px - ${CONSOLE_HEIGHT}px - 44px)`;
-
+  const CONSOLE_HEIGHT = 260;
 
   return (
-    <div style={{ minHeight: "100vh", fontFamily: "'Syne', sans-serif", background: isDark ? "#1a1a1a" : "#ffffff", color: isDark ? "#eff1f6" : "#1a1a1a", display: "flex", flexDirection: "column" }}>
+    <div style={{
+      height: "100vh",
+      overflow: "hidden",
+      fontFamily: "'Syne', sans-serif",
+      background: isDark ? "#1a1a1a" : "#ffffff",
+      color: isDark ? "#eff1f6" : "#1a1a1a",
+      display: "flex",
+      flexDirection: "column"
+    }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -152,8 +152,8 @@ export default function ProblemPage() {
           border-bottom: 1px solid ${isDark ? "#3a3a3a" : "#e5e7eb"};
           display: flex; align-items: center;
           padding: 0 16px; gap: 12px;
-          position: sticky; top: 0; z-index: 100;
           flex-shrink: 0;
+          z-index: 100;
         }
         .lc-back {
           display: inline-flex; align-items: center; gap: 5px;
@@ -176,19 +176,22 @@ export default function ProblemPage() {
           font-family: 'JetBrains Mono', monospace;
         }
 
-        /* Body split */
+        /* Body split — KEY: height fills remaining space, overflow hidden */
         .lc-body {
-          flex: 1; display: flex; overflow: hidden;
-          height: calc(100vh - 46px);
+          flex: 1;
+          display: flex;
+          overflow: hidden;
+          min-height: 0; /* crucial for flex children */
         }
 
-        /* Left panel */
+        /* Left panel — independently scrollable */
         .lc-left {
           width: 460px; min-width: 300px; max-width: 600px;
           display: flex; flex-direction: column;
           border-right: 1px solid ${isDark ? "#3a3a3a" : "#e5e7eb"};
           background: ${isDark ? "#1a1a1a" : "#ffffff"};
-          overflow: hidden;
+          overflow: hidden; /* children handle their own scroll */
+          flex-shrink: 0;
         }
         .lc-tabs {
           height: 40px; display: flex; align-items: center;
@@ -211,9 +214,14 @@ export default function ProblemPage() {
         .lc-tab:hover { color: ${isDark ? "#eff1f6" : "#111"}; }
         .lc-tab.active { color: #ffa116; border-bottom-color: #ffa116; }
 
-        .lc-left-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+        /* KEY FIX: left body scrolls independently */
+        .lc-left-body {
+          flex: 1;
+          overflow-y: auto;
+          padding: 20px 24px;
+          min-height: 0;
+        }
 
-        /* Problem meta */
         .lc-problem-title { font-size: 19px; font-weight: 800; margin-bottom: 12px; line-height: 1.3; }
         .lc-meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
         .lc-tag {
@@ -252,10 +260,17 @@ export default function ProblemPage() {
           margin: 20px 0 10px;
         }
 
-        /* Right panel */
-        .lc-right { flex: 1; display: flex; flex-direction: column; min-width: 0; background: ${isDark ? "#1e1e1e" : "#fafafa"}; }
+        /* Right panel — KEY FIX: independent flex column, no overflow leaking */
+        .lc-right {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+          min-height: 0; /* crucial */
+          overflow: hidden;
+          background: ${isDark ? "#1e1e1e" : "#fafafa"};
+        }
 
-        /* Lang bar */
         .lc-langbar {
           height: 40px; display: flex; align-items: center; gap: 6px;
           padding: 0 12px;
@@ -276,7 +291,6 @@ export default function ProblemPage() {
         .lc-lang-btn.active { border-color: #ffa116; color: #ffa116; background: rgba(255,161,22,0.1); }
         .lc-langbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
-        /* Console area */
         .lc-console {
           border-top: 1px solid ${isDark ? "#3a3a3a" : "#e5e7eb"};
           background: ${isDark ? "#1a1a1a" : "#ffffff"};
@@ -312,7 +326,6 @@ export default function ProblemPage() {
         }
         .lc-console-close:hover { color: ${isDark ? "#fff" : "#111"}; background: ${isDark ? "#3a3a3a" : "#e5e7eb"}; }
 
-        /* Action bar */
         .lc-actionbar {
           height: 44px;
           background: ${isDark ? "#282828" : "#f7f8fa"};
@@ -332,9 +345,7 @@ export default function ProblemPage() {
         }
         .lc-btn:hover:not(:disabled) { border-color: ${isDark ? "#555" : "#bbb"}; color: ${isDark ? "#fff" : "#111"}; }
         .lc-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .lc-btn-submit {
-          background: #ffa116; border-color: #ffa116; color: #000;
-        }
+        .lc-btn-submit { background: #ffa116; border-color: #ffa116; color: #000; }
         .lc-btn-submit:hover:not(:disabled) { background: #ffb84d; border-color: #ffb84d; }
         .lc-btn-accepted { background: #00b8a3; border-color: #00b8a3; color: #000; }
         .lc-console-toggle {
@@ -348,7 +359,6 @@ export default function ProblemPage() {
         }
         .lc-console-toggle:hover { color: ${isDark ? "#fff" : "#111"}; border-color: ${isDark ? "#555" : "#bbb"}; }
 
-        /* Result cards */
         .lc-spinner { width:14px; height:14px; border:2px solid rgba(255,161,22,0.2); border-top-color:#ffa116; border-radius:50%; animation:lc-spin 0.7s linear infinite; flex-shrink: 0; }
         @keyframes lc-spin { to { transform: rotate(360deg); } }
         .lc-status-accept { color: #00b8a3; font-weight: 800; font-size: 16px; }
@@ -378,7 +388,7 @@ export default function ProblemPage() {
         .lc-solution-code { background:${isDark ? "#282828" : "#f7f8fa"}; border:1px solid ${isDark ? "#3a3a3a" : "#e5e7eb"}; border-radius:10px; padding:16px; font-size:13px; font-family:'JetBrains Mono',monospace; color:${isDark ? "#c9ccd3" : "#333"}; line-height:1.7; overflow-x:auto; white-space:pre-wrap; }
       `}</style>
 
-      {/* ── Top bar ──────────────────────────────────────────────────────── */}
+      {/* ── Top bar ── */}
       <div className="lc-topbar">
         <NavLink to="/" className="lc-back"><ChevronLeft size={14} />Problems</NavLink>
         <div className="lc-topbar-title">{problem.title}</div>
@@ -393,10 +403,10 @@ export default function ProblemPage() {
         <ThemeToggle />
       </div>
 
-      {/* ── Body ─────────────────────────────────────────────────────────── */}
+      {/* ── Body ── */}
       <div className="lc-body">
 
-        {/* ── Left panel ───────────────────────────────────────────────── */}
+        {/* ── Left panel ── */}
         <div className="lc-left">
           <div className="lc-tabs">
             {TABS.map(({ id, icon, label }) => (
@@ -406,9 +416,8 @@ export default function ProblemPage() {
             ))}
           </div>
 
+          {/* This div scrolls independently */}
           <div className="lc-left-body">
-
-            {/* Description */}
             {leftTab === "description" && (
               <div>
                 <div className="lc-problem-title">{problem.title}</div>
@@ -480,7 +489,7 @@ export default function ProblemPage() {
           </div>
         </div>
 
-        {/* ── Right panel ──────────────────────────────────────────────── */}
+        {/* ── Right panel ── */}
         <div className="lc-right">
 
           {/* Lang bar */}
@@ -499,10 +508,10 @@ export default function ProblemPage() {
             </div>
           </div>
 
-          {/* Monaco editor */}
-          <div style={{ flex: 1, overflow: "hidden" }}>
+          {/* Monaco editor — KEY FIX: flex:1 + minHeight:0 + height="100%" */}
+          <div style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
             <Editor
-              height={editorH}
+              height="100%"
               language={LANG_ID[lang]}
               value={code}
               onChange={(v) => setCodeByLang((prev) => ({ ...prev, [lang]: v || "" }))}
@@ -537,9 +546,9 @@ export default function ProblemPage() {
             <div className="lc-console" style={{ height: CONSOLE_HEIGHT }}>
               <div className="lc-console-tabs">
                 {[
-                  { id: "testcase", label: "Test results",   show: !!runResult              },
-                  { id: "result",   label: "Submit result",  show: !!submitResult           },
-                  { id: "review",   label: "AI review",      show: reviewing || !!aiReview  },
+                  { id: "testcase", label: "Test results",  show: !!runResult             },
+                  { id: "result",   label: "Submit result", show: !!submitResult          },
+                  { id: "review",   label: "AI review",     show: reviewing || !!aiReview },
                 ].filter(t => t.show).map(({ id, label }) => (
                   <button key={id} className={`lc-console-tab${consoleTab === id ? " active" : ""}`} onClick={() => setConsoleTab(id)}>
                     {id === "review" && reviewing && <span className="lc-spinner" />}
