@@ -83,7 +83,7 @@ const getProblemById = async (req, res, next) => {
     const { id } = req.params;
     try {
         const problem = await Problem.findById(id).select(
-            '_id title description difficulty tags visibleTestCases startCode referenceSolution'
+            '_id title description difficulty tags visibleTestCases startCode referenceSolution paramNames constraints points'
         );
         if (!problem)
             return res.status(404).json({ message: "Problem not found" });
@@ -132,7 +132,6 @@ const submittedProblem = async (req, res, next) => {
 
         const submissions = await Submission.find({ userId, problemId });
 
-        // Fixed: single res.json call, no double-send
         res.status(200).json(submissions);
     } catch (err) {
         next(err);

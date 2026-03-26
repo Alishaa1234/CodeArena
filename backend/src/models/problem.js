@@ -68,6 +68,10 @@ const problemSchema = new Schema({
         min: 10,
         max: 1000,
     },
+    paramNames: {
+  type: [String],
+  default: [],
+},
     // ─────────────────────────────────────────────────────────────────────────
 
 }, {
