@@ -52,14 +52,14 @@ function ExampleCard({ example, index, paramNames, isDark }) {
   const green  = "#00b8a3";
 
   return (
-    <div style={{ background: bg, border: 1px solid ${border}, borderRadius: 10, marginBottom: 12, overflow: "hidden", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>
-      <div style={{ padding: "8px 16px", borderBottom: 1px solid ${border}, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, marginBottom: 12, overflow: "hidden", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>
+      <div style={{ padding: "8px 16px", borderBottom: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>
           Example {index + 1}
         </span>
       </div>
 
-      <div style={{ padding: "12px 16px", borderBottom: 1px solid ${border} }}>
+      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${border}` }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Input</div>
         {lines.length === 0
           ? <span style={{ color: muted }}>—</span>
@@ -67,7 +67,7 @@ function ExampleCard({ example, index, paramNames, isDark }) {
             ? <pre style={{ color: ink, fontSize: 13, lineHeight: 1.7, margin: 0, fontFamily: "'JetBrains Mono',monospace" }}>{lines.join("\n")}</pre>
             : <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
                 {lines.map((line, li) => {
-                  const name = params[li] || param${li + 1};
+                  const name = params[li] || `param${li + 1}`;
                   const val  = formatValue(line);
                   return (
                     <span key={li} style={{ display: "inline-flex", alignItems: "baseline", gap: 6 }}>
@@ -82,7 +82,7 @@ function ExampleCard({ example, index, paramNames, isDark }) {
         }
       </div>
 
-      <div style={{ padding: "12px 16px", borderBottom: example.explanation ? 1px solid ${border} : "none" }}>
+      <div style={{ padding: "12px 16px", borderBottom: example.explanation ? `1px solid ${border}` : "none" }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Output</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <span style={{ color: green, minWidth: 72, fontWeight: 600 }}>result</span>
@@ -92,7 +92,7 @@ function ExampleCard({ example, index, paramNames, isDark }) {
       </div>
 
       {example.explanation && (
-        <div style={{ padding: "10px 16px", background: isDark ? "rgba(255,161,22,0.04)" : "rgba(255,161,22,0.03)", borderTop: 1px solid ${border} }}>
+        <div style={{ padding: "10px 16px", background: isDark ? "rgba(255,161,22,0.04)" : "rgba(255,161,22,0.03)", borderTop: `1px solid ${border}` }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 5 }}>Explanation</div>
           <div style={{ fontSize: 13, color: isDark ? "#c9ccd3" : "#555", lineHeight: 1.7, fontFamily: "'Syne',sans-serif" }}>
             {example.explanation}
@@ -120,8 +120,8 @@ function RunCaseCard({ tc, index, paramNames, isDark }) {
   const red    = "#ff375f";
 
   return (
-    <div style={{ background: bg, border: 1px solid ${passed ? "rgba(0,184,163,0.3)" : "rgba(255,55,95,0.3)"}, borderRadius: 10, marginBottom: 10, overflow: "hidden", fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>
-      <div style={{ padding: "7px 14px", borderBottom: 1px solid ${border}, display: "flex", alignItems: "center", gap: 8, background: passed ? "rgba(0,184,163,0.05)" : "rgba(255,55,95,0.05)" }}>
+    <div style={{ background: bg, border: `1px solid ${passed ? "rgba(0,184,163,0.3)" : "rgba(255,55,95,0.3)"}`, borderRadius: 10, marginBottom: 10, overflow: "hidden", fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>
+      <div style={{ padding: "7px 14px", borderBottom: `1px solid ${border}`, display: "flex", alignItems: "center", gap: 8, background: passed ? "rgba(0,184,163,0.05)" : "rgba(255,55,95,0.05)" }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: muted }}>Test {index + 1}</span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: passed ? "rgba(0,184,163,0.1)" : "rgba(255,55,95,0.1)", color: passed ? green : red }}>
           {passed ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
@@ -133,7 +133,7 @@ function RunCaseCard({ tc, index, paramNames, isDark }) {
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Input</div>
           {lines.map((line, li) => {
-            const name = params[li] || param${li + 1};
+            const name = params[li] || `param${li + 1}`;
             return (
               <div key={li} style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: li < lines.length - 1 ? 3 : 0 }}>
                 <span style={{ color: accent, minWidth: 64, fontWeight: 600 }}>{name}</span>
@@ -196,7 +196,7 @@ export default function ProblemPage() {
     const fetchProblem = async () => {
       setPageLoading(true);
       try {
-        const { data } = await axiosClient.get(/problem/problemById/${problemId});
+        const { data } = await axiosClient.get(`/problem/problemById/${problemId}`);
         setProblem(data);
         const starterByLang = { javascript: "", java: "", cpp: "" };
         const map = { javascript: "javascript", java: "java", "c++": "cpp" };
@@ -215,7 +215,7 @@ export default function ProblemPage() {
     setLoading(true); setRunResult(null);
     setConsoleOpen(true); setConsoleTab("testcase");
     try {
-      const { data } = await axiosClient.post(/submission/run/${problemId}, { code, language: lang });
+      const { data } = await axiosClient.post(`/submission/run/${problemId}`, { code, language: lang });
       setRunResult(data);
     } catch (e) {
       setRunResult({ success: false, testCases: [], error: e.displayMessage });
@@ -226,10 +226,10 @@ export default function ProblemPage() {
     setLoading(true); setSubmitResult(null); setAiReview(null);
     setConsoleOpen(true); setConsoleTab("result");
     try {
-      const { data } = await axiosClient.post(/submission/submit/${problemId}, { code, language: lang });
+      const { data } = await axiosClient.post(`/submission/submit/${problemId}`, { code, language: lang });
       setSubmitResult(data);
       setReviewing(true); setConsoleTab("review");
-      axiosClient.post(/agent/review/${problemId}, { code, language: lang, accepted: data.accepted })
+      axiosClient.post(`/agent/review/${problemId}`, { code, language: lang, accepted: data.accepted })
         .then(({ data: r }) => setAiReview(r))
         .catch((e) => console.error("Agent review failed:", e.message))
         .finally(() => setReviewing(false));
@@ -336,7 +336,7 @@ export default function ProblemPage() {
         <div className="lc-left">
           <div className="lc-tabs">
             {TABS.map(({ id, icon, label }) => (
-              <button key={id} className={lc-tab${leftTab === id ? " active" : ""}} onClick={() => setLeftTab(id)}>
+              <button key={id} className={`lc-tab${leftTab === id ? " active" : ""}`} onClick={() => setLeftTab(id)}>
                 {icon}{label}
               </button>
             ))}
@@ -402,7 +402,7 @@ export default function ProblemPage() {
         <div className="lc-right">
           <div className="lc-langbar">
             {["javascript", "java", "cpp"].map((l) => (
-              <button key={l} className={lc-lang-btn${lang === l ? " active" : ""}} onClick={() => setLang(l)}>
+              <button key={l} className={`lc-lang-btn${lang === l ? " active" : ""}`} onClick={() => setLang(l)}>
                 {LANG_LABELS[l]}
               </button>
             ))}
@@ -443,7 +443,7 @@ export default function ProblemPage() {
                   { id: "result",   label: "Submit result", show: !!submitResult          },
                   { id: "review",   label: "AI review",     show: reviewing || !!aiReview },
                 ].filter(t => t.show).map(({ id, label }) => (
-                  <button key={id} className={lc-console-tab${consoleTab === id ? " active" : ""}} onClick={() => setConsoleTab(id)}>
+                  <button key={id} className={`lc-console-tab${consoleTab === id ? " active" : ""}`} onClick={() => setConsoleTab(id)}>
                     {id === "review" && reviewing && <span className="lc-spinner" />}
                     {label}{id === "review" && reviewing ? " ..." : ""}
                   </button>
@@ -494,8 +494,8 @@ export default function ProblemPage() {
                           </div>
                         )}
                         <div className="lc-kv-row">
-                          <div className="lc-kv"><div className="lc-kv-k">Runtime</div><div className="lc-kv-v">{submitResult.runtime != null ? ${Number(submitResult.runtime).toFixed(3)}s : "—"}</div></div>
-                          <div className="lc-kv"><div className="lc-kv-k">Memory</div><div className="lc-kv-v">{submitResult.memory != null ? ${submitResult.memory} KB : "—"}</div></div>
+                          <div className="lc-kv"><div className="lc-kv-k">Runtime</div><div className="lc-kv-v">{submitResult.runtime != null ? `${Number(submitResult.runtime).toFixed(3)}s` : "—"}</div></div>
+                          <div className="lc-kv"><div className="lc-kv-k">Memory</div><div className="lc-kv-v">{submitResult.memory != null ? `${submitResult.memory} KB` : "—"}</div></div>
                         </div>
                       </>
                     )}
@@ -535,7 +535,7 @@ export default function ProblemPage() {
           <div className="lc-actionbar">
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <button className="lc-btn" onClick={handleRun} disabled={loading}><Play size={13} />Run</button>
-              <button className={lc-btn ${submitResult?.accepted ? "lc-btn-accepted" : "lc-btn-submit"}} onClick={handleSubmit} disabled={loading || !!submitResult?.accepted}>
+              <button className={`lc-btn ${submitResult?.accepted ? "lc-btn-accepted" : "lc-btn-submit"}`} onClick={handleSubmit} disabled={loading || !!submitResult?.accepted}>
                 <Send size={13} />{submitResult?.accepted ? "Accepted ✓" : "Submit"}
               </button>
             </div>
