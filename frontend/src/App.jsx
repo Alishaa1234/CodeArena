@@ -14,10 +14,16 @@ import AdminPanel   from "./components/AdminPanel";
 import AdminDelete  from "./components/AdminDelete";
 import AdminVideo   from "./components/AdminVideo";
 import AdminUpload  from "./components/AdminUpload";
-import DuelPage from "./pages/DuelPage";
+import DuelPage     from "./pages/DuelPage";
 
-
-
+// ── Interview pages (integrated from interview app) ───────────────────────────
+import InterviewEntry   from "./pages/InterviewEntry";
+import InterviewSetup   from "./pages/InterviewSetup";
+import InterviewLive    from "./pages/InterviewLive";
+import InterviewReport  from "./pages/InterviewReport";
+import InterviewHistory from "./pages/InterviewHistory";
+import InterviewCoding  from "./pages/InterviewCoding";
+import ATSAnalyzer     from "./pages/ATSAnalyzer";
 
 function App() {
     const dispatch = useDispatch();
@@ -41,19 +47,38 @@ function App() {
 
     return (
         <Routes>
+            {/* ── Core routes ── */}
             <Route path="/"                        element={isAuthenticated ? <Homepage />    : <Navigate to="/signup" />} />
             <Route path="/login"                   element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
             <Route path="/signup"                  element={isAuthenticated ? <Navigate to="/" /> : <Signup />} />
-            <Route path="/profile"                 element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} /> 
+            <Route path="/profile"                 element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path="/problem/:problemId"      element={isAuthenticated ? <ProblemPage /> : <Navigate to="/login" />} />
+
+            {/* ── Admin routes ── */}
             <Route path="/admin"                   element={isAdmin ? <Admin />       : <Navigate to="/" />} />
             <Route path="/admin/create"            element={isAdmin ? <AdminPanel />  : <Navigate to="/" />} />
             <Route path="/admin/delete"            element={isAdmin ? <AdminDelete /> : <Navigate to="/" />} />
             <Route path="/admin/video"             element={isAdmin ? <AdminVideo />  : <Navigate to="/" />} />
             <Route path="/admin/upload/:problemId" element={isAdmin ? <AdminUpload /> : <Navigate to="/" />} />
-            <Route path="/duel" element={isAuthenticated ? <DuelPage /> : <Navigate to="/login" />} />
 
-            
+            {/* ── Duel route ── */}
+            <Route path="/duel"                    element={isAuthenticated ? <DuelPage />        : <Navigate to="/login" />} />
+
+            {/* ── Interview routes ── */}
+            {/* /interview        → bridge auth (auto-login to interview backend) */}
+            {/* /interview/setup  → Step 1: setup form */}
+            {/* /interview/live   → Step 2: live interview with AI */}
+            {/* /interview/report → Step 3: report after finishing */}
+            {/* /interview/report/:id → report from history */}
+            {/* /interview/history → all past interviews */}
+            <Route path="/interview"               element={isAuthenticated ? <InterviewEntry />   : <Navigate to="/login" />} />
+            <Route path="/interview/setup"         element={isAuthenticated ? <InterviewSetup />   : <Navigate to="/login" />} />
+            <Route path="/interview/live"          element={isAuthenticated ? <InterviewLive />    : <Navigate to="/login" />} />
+            <Route path="/interview/report"        element={isAuthenticated ? <InterviewReport />  : <Navigate to="/login" />} />
+            <Route path="/interview/report/:id"    element={isAuthenticated ? <InterviewReport />  : <Navigate to="/login" />} />
+            <Route path="/interview/history"       element={isAuthenticated ? <InterviewHistory /> : <Navigate to="/login" />} />
+            <Route path="/interview/coding"        element={isAuthenticated ? <InterviewCoding />  : <Navigate to="/login" />} />
+            <Route path="/ats"                     element={isAuthenticated ? <ATSAnalyzer />    : <Navigate to="/login" />} />
         </Routes>
     );
 }

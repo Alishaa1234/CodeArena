@@ -15,6 +15,12 @@ for (const key of REQUIRED_ENV) {
 }
 
 const main = require('./src/config/db');
+const fs   = require('fs');
+const path = require('path');
+
+// Ensure public folder exists for resume uploads
+const publicDir = path.join(__dirname, 'public');
+if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 const { redisClient } = require('./src/config/redis');
 const cookieParser = require('cookie-parser');
 const authRouter    = require('./src/routes/userAuth');
@@ -24,7 +30,9 @@ const aiRouter      = require('./src/routes/aiChatting');
 const videoRouter   = require('./src/routes/videoCreator');
 const profileRouter = require('./src/routes/profile');
 const duelRouter    = require('./src/routes/duel');
-const agentRouter   = require('./src/routes/agent');   // ← Code Execution Agent
+const agentRouter     = require('./src/routes/agent');     // ← Code Execution Agent
+const interviewRouter = require('./src/routes/interview'); // ← Interview
+const atsRouter       = require('./src/routes/ats');       // ← ATS Analyzer
 const hintRouter    = require('./src/routes/hint');    // ← AI Hints
 const duelHandler   = require('./src/socket/duelHandler');
 const cors = require('cors');
@@ -69,7 +77,7 @@ const aiLimiter = rateLimit({
 // Code execution — 30 runs per minute per IP
 const judgeLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 10,
+    max: 30,
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: 'Too many code submissions, please slow down.' },
@@ -133,6 +141,8 @@ app.use('/profile',    profileRouter);
 app.use('/duel',       duelRouter);
 app.use('/agent',      aiLimiter, agentRouter);    // OpenRouter cost protection
 app.use('/hint',       aiLimiter, hintRouter);     // OpenRouter cost protection
+app.use('/api/interview', aiLimiter, interviewRouter); // ← Interview
+app.use('/ats',           aiLimiter, atsRouter);       // ← ATS Analyzer
 
 // ── Global error handler ──────────────────────────────────────────────────────
 

@@ -1,7 +1,3 @@
-/* PAGE: Homepage
-   PURPOSE: The landing page of the application where users can see featured content or news.
-*/
-
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,7 +5,7 @@ import axiosClient from "../utils/axiosClient";
 import { logoutUser } from "../authSlice";
 import {
   Code2, LogOut, Settings, CheckCircle2, ChevronDown,
-  Swords, Search, ArrowUpDown, X, User
+  Swords, Search, ArrowUpDown, X, User, BrainCircuit, Target
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 
@@ -162,7 +158,7 @@ export default function Homepage() {
       <nav className="hp-nav">
         <NavLink to="/" className="hp-logo">
           <div className="hp-logo-icon"><Code2 size={18} color="#000"/></div>
-          <span className="hp-logo-text">CodeArena</span>
+          <span className="hp-logo-text">LeetCode</span>
         </NavLink>
         <div className="hp-nav-right">
           {user?.role === "admin" && (
@@ -172,6 +168,20 @@ export default function Homepage() {
           )}
           <button className="hp-nav-btn duel" onClick={() => navigate("/duel")}>
             <Swords size={13}/>Duel
+          </button>
+          <button className="hp-nav-btn" onClick={() => navigate('/interview')}
+            style={{ color:"#a855f7", borderColor:"rgba(168,85,247,0.4)", background:"rgba(168,85,247,0.06)" }}
+            onMouseEnter={e => e.currentTarget.style.background="rgba(168,85,247,0.12)"}
+            onMouseLeave={e => e.currentTarget.style.background="rgba(168,85,247,0.06)"}
+          >
+            <BrainCircuit size={13}/>Interview
+          </button>
+          <button className="hp-nav-btn" onClick={() => navigate("/ats")}
+            style={{ color:"#22c55e", borderColor:"rgba(34,197,94,0.4)", background:"rgba(34,197,94,0.06)" }}
+            onMouseEnter={e => e.currentTarget.style.background="rgba(34,197,94,0.12)"}
+            onMouseLeave={e => e.currentTarget.style.background="rgba(34,197,94,0.06)"}
+          >
+            <Target size={13}/>ATS Score
           </button>
           <ThemeToggle/>
           <div className="hp-avatar" onClick={() => navigate("/profile")} title="Profile">
@@ -212,7 +222,57 @@ export default function Homepage() {
           </div>
         </div>
 
-        {/* ── Stats ── */}
+        {/* ── Interview banner ── */}
+        <div
+          onClick={() => navigate('/interview')}
+          style={{ background:isDark ? "#1a1a1a" : "#ffffff", border:`1px solid ${isDark ? "#2a2a2a" : "#e4e4e7"}`, borderRadius:16, padding:"18px 22px", marginBottom:24, display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, cursor:"pointer", transition:"all 0.2s" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(168,85,247,0.5)"; e.currentTarget.style.background=isDark?"rgba(168,85,247,0.06)":"rgba(168,85,247,0.03)"; e.currentTarget.style.transform="translateY(-1px)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor=isDark?"#2a2a2a":"#e4e4e7"; e.currentTarget.style.background=isDark?"#1a1a1a":"#ffffff"; e.currentTarget.style.transform="translateY(0)"; }}
+        >
+          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+            <div style={{ width:42, height:42, background:"rgba(168,85,247,0.1)", border:"1px solid rgba(168,85,247,0.25)", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <BrainCircuit size={20} color="#a855f7"/>
+            </div>
+            <div>
+              <p style={{ fontSize:15, fontWeight:800, color:text, margin:"0 0 3px" }}>AI Mock Interview</p>
+              <p style={{ fontSize:12, color:textMut, margin:0, fontFamily:"'JetBrains Mono',monospace" }}>
+                Upload resume · AI interviewer · Get scored feedback
+              </p>
+            </div>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ padding:"3px 12px", borderRadius:20, fontSize:12, fontWeight:700, fontFamily:"'JetBrains Mono',monospace", color:"#a855f7", background:"rgba(168,85,247,0.1)", border:"1px solid rgba(168,85,247,0.25)" }}>
+              New
+            </span>
+            <ChevronDown size={16} style={{ transform:"rotate(-90deg)", color:textMut }}/>
+          </div>
+        </div>
+
+        {/* ATS banner */}
+        <div
+          onClick={() => navigate("/ats")}
+          style={{ background:isDark ? "#1a1a1a" : "#ffffff", border:"1px solid " + (isDark ? "#2a2a2a" : "#e4e4e7"), borderRadius:16, padding:"18px 22px", marginBottom:24, display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, cursor:"pointer", transition:"all 0.2s" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(34,197,94,0.5)"; e.currentTarget.style.transform="translateY(-1px)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor=isDark?"#2a2a2a":"#e4e4e7"; e.currentTarget.style.transform="translateY(0)"; }}
+        >
+          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+            <div style={{ width:42, height:42, background:"rgba(34,197,94,0.1)", border:"1px solid rgba(34,197,94,0.25)", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <Target size={20} color="#22c55e"/>
+            </div>
+            <div>
+              <p style={{ fontSize:15, fontWeight:800, color:text, margin:"0 0 3px" }}>ATS Resume Analyzer</p>
+              <p style={{ fontSize:12, color:textMut, margin:0, fontFamily:"'JetBrains Mono',monospace" }}>
+                Keyword matching · Section scoring · AI rewrites · Industry benchmarks
+              </p>
+            </div>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ padding:"3px 12px", borderRadius:20, fontSize:12, fontWeight:700, fontFamily:"'JetBrains Mono',monospace", color:"#22c55e", background:"rgba(34,197,94,0.1)", border:"1px solid rgba(34,197,94,0.25)" }}>Level 2+3</span>
+            <ChevronDown size={16} style={{ transform:"rotate(-90deg)", color:textMut }}/>
+          </div>
+        </div>
+
+        {/* Stats */}
         <div className="hp-stats">
           <div className="hp-stat">
             <div className="hp-stat-lbl">Total Solved</div>

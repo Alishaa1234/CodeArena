@@ -1,7 +1,3 @@
-/* PAGE: ProfilePage
-   PURPOSE: Displays user statistics, solved problems, and account settings.
-*/
-
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
@@ -262,7 +258,7 @@ export default function ProfilePage() {
                     <div style={{ width:28, height:28, background:"#ffa116", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center" }}>
                         <Code2 size={15} color="#000"/>
                     </div>
-                    <span style={{ fontSize:15, fontWeight:800, color:text }}>CodeArena</span>
+                    <span style={{ fontSize:15, fontWeight:800, color:text }}>LeetCode</span>
                 </div>
                 <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8 }}>
                     {authUser?.role === "admin" && (
@@ -334,6 +330,26 @@ export default function ProfilePage() {
                                     </div>
                                 ))}
                             </div>
+
+                            {/* Interview streak */}
+                            {profile.interviewStreak != null && (
+                                <>
+                                    <div className="pf-hr"/>
+                                    <div className="pf-label">Interview streak</div>
+                                    <div style={{ display:"flex", gap:10 }}>
+                                        {[
+                                            { icon:"🎙️", num:profile.interviewStreak?.current ?? 0, label:"Current", color:"#a855f7" },
+                                            { icon:"🏆", num:profile.interviewStreak?.total   ?? 0, label:"Total",   color:"#a855f7" },
+                                        ].map(({ icon, num, label, color }) => (
+                                            <div key={label} className="pf-tile" style={{ flex:1, textAlign:"center" }}>
+                                                <div style={{ fontSize:18, marginBottom:6 }}>{icon}</div>
+                                                <div style={{ fontSize:26, fontWeight:900, color, fontFamily:"'Syne',sans-serif", lineHeight:1 }}>{num}</div>
+                                                <div style={{ fontSize:10, color:textMut, fontFamily:"'JetBrains Mono',monospace", marginTop:5, textTransform:"uppercase", letterSpacing:"0.5px" }}>{label}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
 
                             {/* ELO */}
                             {profile.user.eloRating != null && (
