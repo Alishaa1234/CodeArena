@@ -3,10 +3,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, NavLink } from "react-router";
+import { useNavigate, Link } from "react-router";
 import { registerUser } from "../authSlice";
-import { Eye, EyeOff, Code2 } from "lucide-react";
-import ThemeToggle from "../components/ThemeToggle";
+import { Eye, EyeOff } from "lucide-react";
+import "./LandingPage.css";
 
 const signupSchema = z.object({
   firstName: z.string().min(3, "Name must be at least 3 characters"),
@@ -31,88 +31,123 @@ export default function Signup() {
   const onSubmit = (data) => dispatch(registerUser(data));
 
   return (
-    <div className="lc-auth-root">
-      <div style={{ position: "absolute", right: 16, top: 16, zIndex: 5 }}>
-        <ThemeToggle />
-      </div>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
-        .lc-auth-root { min-height:100vh; background:var(--bg-primary); display:flex; font-family:'Syne',sans-serif; position:relative; overflow:hidden; align-items:center; justify-content:center; }
-        .lc-auth-root::before { content:''; position:absolute; inset:0; background: radial-gradient(ellipse 60% 50% at 30% 30%, rgba(255,161,22,0.07) 0%, transparent 70%), radial-gradient(ellipse 40% 60% at 80% 80%, rgba(255,87,34,0.05) 0%, transparent 60%); pointer-events:none; }
-        .lc-grid-bg { position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px); background-size:48px 48px; pointer-events:none; }
-        .lc-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:40px; width:100%; max-width:440px; position:relative; z-index:1; }
-        .lc-brand { display:flex; align-items:center; gap:10px; margin-bottom:28px; }
-        .lc-brand-icon { width:36px; height:36px; background:#ffa116; border-radius:8px; display:flex; align-items:center; justify-content:center; }
-        .lc-brand-name { font-size:20px; font-weight:800; color:var(--text-primary); letter-spacing:-0.5px; }
-        .lc-title { font-size:26px; font-weight:800; color:var(--text-primary); margin-bottom:6px; letter-spacing:-0.5px; }
-        .lc-sub { font-size:13px; color:var(--text-muted); margin-bottom:28px; font-family:'JetBrains Mono',monospace; }
-        .lc-field { margin-bottom:18px; }
-        .lc-label { display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:7px; font-family:'JetBrains Mono',monospace; }
-        .lc-input-wrap { position:relative; }
-        .lc-input { width:100%; background:var(--input-bg); border:1px solid var(--border-mid); border-radius:10px; padding:12px 16px; font-size:14px; color:var(--text-primary); outline:none; transition:border-color 0.2s; font-family:'Syne',sans-serif; box-sizing:border-box; }
-        .lc-input:focus { border-color:var(--accent); }
-        .lc-input.err { border-color:#ef4444; }
-        .lc-input.has-icon { padding-right:44px; }
-        .lc-input-icon { position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; padding:0; display:flex; }
-        .lc-input-icon:hover { color:var(--text-primary); }
-        .lc-err { font-size:11px; color:#ef4444; margin-top:5px; font-family:'JetBrains Mono',monospace; }
-        .lc-alert { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:12px 16px; font-size:13px; color:#ef4444; margin-bottom:18px; font-family:'JetBrains Mono',monospace; }
-        .lc-btn { width:100%; background:#ffa116; color:#000; border:none; border-radius:10px; padding:13px; font-size:15px; font-weight:700; cursor:pointer; transition:opacity 0.2s, transform 0.1s; font-family:'Syne',sans-serif; margin-top:6px; }
-        .lc-btn:hover:not(:disabled) { opacity:0.9; transform:translateY(-1px); }
-        .lc-btn:disabled { opacity:0.5; cursor:not-allowed; }
-        .lc-divider { display:flex; align-items:center; gap:12px; margin:22px 0; }
-        .lc-divider-line { flex:1; height:1px; background:var(--border); }
-        .lc-divider-text { font-size:11px; color:var(--text-faint); font-family:'JetBrains Mono',monospace; }
-        .lc-link-row { text-align:center; font-size:13px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
-        .lc-link { color:#ffa116; text-decoration:none; font-weight:600; }
-        .lc-link:hover { text-decoration:underline; }
-        .lc-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(0,0,0,0.3); border-top-color:#000; border-radius:50%; animation:lc-spin 0.7s linear infinite; vertical-align:middle; margin-right:7px; }
-        @keyframes lc-spin { to { transform:rotate(360deg); } }
-      `}</style>
-      <div className="lc-grid-bg" />
-      <div className="lc-card">
-        <div className="lc-brand">
-          <div className="lc-brand-icon"><Code2 size={20} color="#000" /></div>
-          <span className="lc-brand-name">CodeArena</span>
-        </div>
-        <div className="lc-title">Create account</div>
-        <div className="lc-sub">// start your coding journey</div>
+    <div className="landing-page">
+      <div className="lp-page">
+        <div className="lp-bg-layer lp-bg-grid" />
+        <div className="lp-bg-layer lp-bg-hero-glow" />
 
-        {error && <div className="lc-alert">⚠ {error}</div>}
+        <Link to="/" className="lp-top-brand" style={{ textDecoration: "none", color: "inherit" }}>
+          <span className="lp-brand-mark lp-bg-gradient-to-br-primary">{"<<>"}</span>
+          <span className="lp-brand-name">CodeArena</span>
+        </Link>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="lc-field">
-            <label className="lc-label">First Name</label>
-            <input type="text" placeholder="John" className={`lc-input${errors.firstName ? " err" : ""}`} {...register("firstName")} />
-            {errors.firstName && <div className="lc-err">{errors.firstName.message}</div>}
-          </div>
-          <div className="lc-field">
-            <label className="lc-label">Email</label>
-            <input type="email" placeholder="you@example.com" className={`lc-input${errors.emailId ? " err" : ""}`} {...register("emailId")} />
-            {errors.emailId && <div className="lc-err">{errors.emailId.message}</div>}
-          </div>
-          <div className="lc-field">
-            <label className="lc-label">Password</label>
-            <div className="lc-input-wrap">
-              <input type={showPassword ? "text" : "password"} placeholder="••••••••" className={`lc-input has-icon${errors.password ? " err" : ""}`} {...register("password")} />
-              <button type="button" className="lc-input-icon" onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
+        <div className="lp-card">
+          <span className="lp-eyebrow">
+            <span className="lp-eyebrow-dot" />
+            Create your account
+          </span>
+
+          <h1 className="lp-title">
+            Start coding.{" "}
+            <span className="lp-bg-gradient-to-br-primary lp-bg-clip-text lp-text-transparent">
+              Land the offer.
+            </span>
+          </h1>
+          <p className="lp-subtitle">
+            Join CodeArena to practice problems, simulate AI interviews, and beat the ATS.
+          </p>
+
+          {error && <div className="lp-alert">⚠ {error}</div>}
+
+          <form className="lp-form" onSubmit={handleSubmit(onSubmit)}>
+            <div className="lp-field">
+              <label className="lp-label" htmlFor="firstName">Full name</label>
+              <input
+                id="firstName"
+                type="text"
+                className={`lp-input${errors.firstName ? " err" : ""}`}
+                placeholder="Ada Lovelace"
+                {...register("firstName")}
+              />
+              {errors.firstName && <div className="lp-err">{errors.firstName.message}</div>}
             </div>
-            {errors.password && <div className="lc-err">{errors.password.message}</div>}
-          </div>
-          <button type="submit" className="lc-btn" disabled={loading}>
-            {loading ? <><span className="lc-spinner" />Creating account...</> : "Create Account"}
-          </button>
-        </form>
 
-        <div className="lc-divider">
-          <div className="lc-divider-line" />
-          <span className="lc-divider-text">or</span>
-          <div className="lc-divider-line" />
-        </div>
-        <div className="lc-link-row">
-          Already have an account?{" "}<NavLink to="/login" className="lc-link">Sign in</NavLink>
+            <div className="lp-field">
+              <label className="lp-label" htmlFor="emailId">Work email</label>
+              <input
+                id="emailId"
+                type="email"
+                className={`lp-input${errors.emailId ? " err" : ""}`}
+                placeholder="you@company.com"
+                {...register("emailId")}
+              />
+              {errors.emailId && <div className="lp-err">{errors.emailId.message}</div>}
+            </div>
+
+            <div className="lp-field">
+              <label className="lp-label" htmlFor="password">Password</label>
+              <div className="lp-input-wrap" style={{ position: "relative" }}>
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  className={`lp-input${errors.password ? " err" : ""}`}
+                  placeholder="At least 8 characters"
+                  {...register("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    right: "12px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    color: "var(--lp-muted-foreground)",
+                    cursor: "pointer",
+                    padding: "6px",
+                    display: "flex",
+                    alignItems: "center"
+                  }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.password && <div className="lp-err">{errors.password.message}</div>}
+            </div>
+
+            <button type="submit" className="lp-btn lp-btn-primary lp-btn-full" style={{ marginTop: "0.25rem" }} disabled={loading}>
+              {loading ? <><span className="lp-spin" />Creating account...</> : "Create account →"}
+            </button>
+          </form>
+
+          <div className="lp-divider">OR CONTINUE WITH</div>
+
+          <div className="lp-oauth">
+            <button type="button" className="lp-btn lp-btn-ghost">
+              <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.8 6.4 29.1 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/>
+                <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 12.5 24 12.5c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.8 6.4 29.1 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"/>
+                <path fill="#4CAF50" d="M24 43.5c5 0 9.6-1.9 13.1-5l-6-5.1c-2 1.4-4.5 2.2-7.1 2.2-5.3 0-9.6-3.1-11.3-7.4l-6.5 5C9.5 39 16.1 43.5 24 43.5z"/>
+                <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6 5.1c-.4.4 6.7-4.9 6.7-14.5 0-1.2-.1-2.4-.4-3.5z"/>
+              </svg>
+              Google
+            </button>
+            <button type="button" className="lp-btn lp-btn-ghost">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2 1-.3 2-.4 3-.4s2 .1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.3.8 1 .8 2v3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/>
+              </svg>
+              GitHub
+            </button>
+          </div>
+
+          <p className="lp-meta">
+            Already have an account? <Link to="/login">Sign in</Link>
+          </p>
+          <p className="lp-fineprint">
+            By creating an account, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+          </p>
         </div>
       </div>
     </div>
