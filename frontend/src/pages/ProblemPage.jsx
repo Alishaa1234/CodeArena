@@ -406,13 +406,6 @@ export default function ProblemPage() {
                 {LANG_LABELS[l]}
               </button>
             ))}
-            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-              {problem.points != null && (
-                <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: "var(--accent)", fontWeight: 700 }}>
-                  {problem.difficulty} · {problem.points}pts
-                </span>
-              )}
-            </div>
           </div>
 
           <div style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>

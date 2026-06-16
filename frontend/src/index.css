@@ -4,10 +4,10 @@
 
 /* ── Dark theme (default) ── */
 :root {
-  --bg-primary:    #0a0b10;
-  --bg-secondary:  #10111a;
-  --bg-tertiary:   #151622;
-  --bg-card:       #10111a;
+  --bg-primary:    #1e1e1e;
+  --bg-secondary:  #161616;
+  --bg-tertiary:   #121212;
+  --bg-card:       #252525;
   --border:        rgba(255, 255, 255, 0.06);
   --border-mid:    #1d1e2b;
   --border-strong: #2d2f42;
@@ -27,10 +27,10 @@
   --danger-border: rgba(239, 68, 68, 0.25);
   --warning:       #ffa116;
   --warning-bg:    rgba(255, 161, 22, 0.1);
-  --code-bg:       #0d0d0d;
-  --nav-bg:        rgba(10, 11, 16, 0.98);
-  --input-bg:      #0a0b10;
-  --scrollbar:     #222222;
+  --code-bg:       #121212;
+  --nav-bg:        rgba(22, 22, 22, 0.96);
+  --input-bg:      #1c1c1c;
+  --scrollbar:     #333333;
 }
 
 /* ── Light theme ── */

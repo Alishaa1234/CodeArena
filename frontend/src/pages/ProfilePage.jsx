@@ -201,6 +201,7 @@ export default function ProfilePage() {
     }, []);
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [avatarError, setAvatarError] = useState(false);
 
     useEffect(() => {
         axiosClient.get("/profile/me")
@@ -296,10 +297,11 @@ export default function ProfilePage() {
                         {/* Profile card */}
                         <div style={card_style}>
                             <div style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:12, marginBottom:16 }}>
-                                {profile.user.avatarUrl ? (
+                                {profile.user.avatarUrl && !avatarError ? (
                                     <img
                                         src={profile.user.avatarUrl}
                                         alt="Avatar"
+                                        onError={() => setAvatarError(true)}
                                         style={{ width:72, height:72, borderRadius:"50%", objectFit:"cover", flexShrink:0, border:`1px solid ${cardBdr}` }}
                                     />
                                 ) : (

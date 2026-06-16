@@ -8,6 +8,7 @@ import {
   Swords, Search, ArrowUpDown, X, User, BrainCircuit, Target
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
+import NavAvatar from "../components/NavAvatar";
 
 export default function Homepage() {
   const dispatch = useDispatch();
@@ -185,11 +186,7 @@ export default function Homepage() {
           </button>
           <ThemeToggle/>
           <div className="hp-avatar" onClick={() => navigate("/profile")} title="Profile">
-            {user?.avatarUrl ? (
-              <img src={user.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
-            ) : (
-              user?.firstName?.[0]?.toUpperCase()
-            )}
+            <NavAvatar user={user} />
           </div>
           <button className="hp-nav-btn" onClick={() => dispatch(logoutUser())}>
             <LogOut size={13}/>Logout

@@ -5,24 +5,30 @@ const {
     upload,
     analyzeResume,
     generateQuestion,
+    generateNextQuestion,
     submitAnswer,
     finishInterview,
     getMyInterviews,
     getInterviewReport,
+    getInterviewAnalytics,
 } = require("../controllers/interviewController");
 
-// POST /interview/resume           — upload + analyze resume
-// POST /interview/generate-questions — generate 5 questions
-// POST /interview/submit-answer    — evaluate one answer
-// POST /interview/finish           — finish and score the interview
-// GET  /interview/get-interview    — get all interviews for current user
-// GET  /interview/report/:id       — get full report for one interview
+// POST /interview/resume              — upload + analyze resume
+// POST /interview/generate-questions  — generate 1st question (adaptive)
+// POST /interview/generate-next       — generate next adaptive question
+// POST /interview/submit-answer       — evaluate one answer (with speech metrics)
+// POST /interview/finish              — finish and score the interview
+// GET  /interview/get-interview       — get all interviews for current user
+// GET  /interview/report/:id          — get full report for one interview
+// GET  /interview/analytics           — cross-interview analytics data
 
 router.post("/resume",             authMiddleware(), upload.single("resume"), analyzeResume);
 router.post("/generate-questions", authMiddleware(), generateQuestion);
+router.post("/generate-next",     authMiddleware(), generateNextQuestion);
 router.post("/submit-answer",      authMiddleware(), submitAnswer);
 router.post("/finish",             authMiddleware(), finishInterview);
 router.get("/get-interview",       authMiddleware(), getMyInterviews);
 router.get("/report/:id",          authMiddleware(), getInterviewReport);
+router.get("/analytics",          authMiddleware(), getInterviewAnalytics);
 
 module.exports = router;

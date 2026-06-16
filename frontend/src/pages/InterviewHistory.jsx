@@ -48,16 +48,16 @@ export default function InterviewHistory() {
         : 0;
 
     return (
-        <div style={{ minHeight:"100vh", background:"#0a0a0f", fontFamily:"'Syne',sans-serif", color:"#f0f0f0" }}>
+        <div style={{ minHeight:"100vh", background:"#1e1e1e", fontFamily:"'Syne',sans-serif", color:"#f0f0f0" }}>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800;900&display=swap');
                 *, *::before, *::after { box-sizing:border-box; }
 
-                .ih-bg { position:fixed; inset:0; background:#0a0a0f; z-index:0; overflow:hidden; }
+                .ih-bg { position:fixed; inset:0; background:#1e1e1e; z-index:0; overflow:hidden; }
                 .ih-bg::before { content:''; position:absolute; top:-20%; right:-10%; width:400px; height:400px; background:radial-gradient(circle,rgba(168,85,247,0.08) 0%,transparent 70%); border-radius:50%; }
 
                 .ih-wrap { position:relative; z-index:1; }
-                .ih-nav { height:60px; background:rgba(10,10,15,0.9); backdrop-filter:blur(20px); border-bottom:1px solid rgba(168,85,247,0.15); display:flex; align-items:center; padding:0 24px; gap:12px; position:sticky; top:0; z-index:100; }
+                .ih-nav { height:60px; background:var(--nav-bg); backdrop-filter:blur(20px); border-bottom:1px solid rgba(168,85,247,0.15); display:flex; align-items:center; padding:0 24px; gap:12px; position:sticky; top:0; z-index:100; }
                 .ih-back { background:none; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px 12px; color:rgba(255,255,255,0.4); cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:12px; font-family:'JetBrains Mono',monospace; transition:all 0.2s; }
                 .ih-back:hover { color:#fff; border-color:rgba(168,85,247,0.4); }
                 .ih-body { max-width:860px; margin:0 auto; padding:36px 24px; }
@@ -102,7 +102,10 @@ export default function InterviewHistory() {
                     </button>
                     <BrainCircuit size={16} color="#a855f7"/>
                     <span style={{ fontSize:14, fontWeight:800, color:"#fff" }}>Interview History</span>
-                    <button className="ih-new-btn" style={{ marginLeft:"auto", padding:"7px 16px", fontSize:13 }} onClick={() => navigate("/interview")}>
+                    <button className="ih-back" style={{ marginLeft:"auto", borderColor:"rgba(168,85,247,0.3)", color:"#c084fc" }} onClick={() => navigate("/interview/analytics")}>
+                        📊 Analytics
+                    </button>
+                    <button className="ih-new-btn" style={{ padding:"7px 16px", fontSize:13 }} onClick={() => navigate("/interview")}>
                         <Plus size={13}/>New Interview
                     </button>
                 </nav>

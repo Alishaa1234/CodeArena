@@ -53,7 +53,7 @@ export default function InterviewReport() {
     };
 
     if (loading) return (
-        <div style={{ minHeight:"100vh", background:"#0a0a0f", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ minHeight:"100vh", background:"#1e1e1e", display:"flex", alignItems:"center", justifyContent:"center" }}>
             <div style={{ textAlign:"center" }}>
                 <BrainCircuit size={40} color="#a855f7" style={{ margin:"0 auto 16px" }}/>
                 <p style={{ color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", fontSize:13 }}>Loading your report...</p>
@@ -62,13 +62,21 @@ export default function InterviewReport() {
     );
 
     if (!report) return (
-        <div style={{ minHeight:"100vh", background:"#0a0a0f", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ minHeight:"100vh", background:"#1e1e1e", display:"flex", alignItems:"center", justifyContent:"center" }}>
             <p style={{ color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>Report not found.</p>
         </div>
     );
 
     const { finalScore=0, confidence=0, communication=0, correctness=0, questionWiseScore=[] } = report;
     const pct = (finalScore/10)*100;
+
+    const completedQs = questionWiseScore.filter(q => q.answer);
+    const avgFillers = completedQs.length
+        ? (completedQs.reduce((acc, q) => acc + (q.fillerCount || 0), 0) / completedQs.length).toFixed(1)
+        : 0;
+    const avgWpm = completedQs.length
+        ? Math.round(completedQs.reduce((acc, q) => acc + (q.wpm || 0), 0) / completedQs.length)
+        : 0;
 
     const chartData    = questionWiseScore.map((q,i) => ({ name:`Q${i+1}`, score:q.score||0 }));
     const radarData    = [
@@ -88,11 +96,11 @@ export default function InterviewReport() {
         : "Focus on fundamentals. Study common interview questions for your role, practice out loud, and work on clarity.";
 
     return (
-        <div style={{ minHeight:"100vh", background:"#0a0a0f", fontFamily:"'Syne',sans-serif", color:"#f0f0f0" }}>
+        <div style={{ minHeight:"100vh", background:"#1e1e1e", fontFamily:"'Syne',sans-serif", color:"#f0f0f0" }}>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800;900&display=swap');
                 *, *::before, *::after { box-sizing:border-box; }
-                .rp-nav { height:60px; background:rgba(10,10,15,0.9); backdrop-filter:blur(20px); border-bottom:1px solid rgba(168,85,247,0.15); display:flex; align-items:center; padding:0 24px; gap:12px; position:sticky; top:0; z-index:100; }
+                .rp-nav { height:60px; background:var(--nav-bg); backdrop-filter:blur(20px); border-bottom:1px solid rgba(168,85,247,0.15); display:flex; align-items:center; padding:0 24px; gap:12px; position:sticky; top:0; z-index:100; }
                 .rp-back { background:none; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px 12px; color:rgba(255,255,255,0.4); cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:12px; font-family:'JetBrains Mono',monospace; transition:all 0.2s; }
                 .rp-back:hover { color:#fff; border-color:rgba(168,85,247,0.4); background:rgba(168,85,247,0.08); }
                 .rp-body { max-width:1080px; margin:0 auto; padding:36px 24px; }
@@ -195,6 +203,26 @@ export default function InterviewReport() {
                                 </ResponsiveContainer>
                             </div>
                         </div>
+
+                        {/* Speech Quality Summary */}
+                        {completedQs.length > 0 && (
+                            <div className="rp-card" style={{ borderColor:"rgba(99,102,241,0.2)", background:"rgba(99,102,241,0.03)" }}>
+                                <div className="rp-label" style={{ color:"#6366f1" }}>Speech Quality Summary</div>
+                                
+                                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                                    <span style={{ fontSize:12, color:"rgba(255,255,255,0.5)", fontFamily:"'JetBrains Mono',monospace" }}>Avg Filler Words</span>
+                                    <span style={{ fontSize:16, fontWeight:800, color: Number(avgFillers) <= 2 ? "#22c55e" : Number(avgFillers) <= 5 ? "#f59e0b" : "#ef4444" }}>{avgFillers}</span>
+                                </div>
+                                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                                    <span style={{ fontSize:12, color:"rgba(255,255,255,0.5)", fontFamily:"'JetBrains Mono',monospace" }}>Avg Speaking Pace</span>
+                                    <span style={{ fontSize:16, fontWeight:800, color: avgWpm >= 120 && avgWpm <= 150 ? "#22c55e" : "#6366f1" }}>{avgWpm || "—"} WPM</span>
+                                </div>
+                                <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace", lineHeight:1.5, borderTop:"1px solid rgba(255,255,255,0.06)", paddingTop:10 }}>
+                                    {Number(avgFillers) <= 2 ? "🎉 Excellent verbal clarity with minimal filler words." : "💡 Try pausing briefly instead of using filler words."}
+                                    {avgWpm > 0 && (avgWpm < 110 ? " Speak a bit faster for dynamic pacing." : avgWpm > 160 ? " Slow down slightly to help clarity." : " Pacing is in the ideal conversational zone.") }
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right */}
@@ -243,10 +271,36 @@ export default function InterviewReport() {
 
                                         {isOpen && (
                                             <div style={{ marginTop:14, borderTop:"1px solid rgba(255,255,255,0.06)", paddingTop:14 }}>
+                                                {q.answer && (
+                                                    <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.05)", borderRadius:10, padding:12, marginBottom:12 }}>
+                                                        <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginBottom:5, textTransform:"uppercase" }}>Your Answer</div>
+                                                        <p style={{ fontSize:12, color:"rgba(255,255,255,0.5)", margin:0, lineHeight:1.7, fontFamily:"'JetBrains Mono',monospace" }}>"{q.answer}"</p>
+                                                    </div>
+                                                )}
+
                                                 <div style={{ background:"rgba(168,85,247,0.06)", border:"1px solid rgba(168,85,247,0.15)", borderRadius:10, padding:12, marginBottom:12 }}>
                                                     <div style={{ fontSize:10, color:"#a855f7", fontFamily:"'JetBrains Mono',monospace", marginBottom:5, textTransform:"uppercase" }}>AI Feedback</div>
                                                     <p style={{ fontSize:12, color:"rgba(255,255,255,0.6)", margin:0, lineHeight:1.7 }}>{q.feedback || "No feedback."}</p>
                                                 </div>
+
+                                                {/* Speech metrics if present */}
+                                                {(q.wpm > 0 || q.fillerCount > 0 || q.starScore > 0) && (
+                                                    <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:8, marginBottom:12 }}>
+                                                        <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:10, padding:"8px", textAlign:"center" }}>
+                                                            <div style={{ fontSize:14, fontWeight:800, color: q.fillerCount <= 2 ? "#22c55e" : q.fillerCount <= 5 ? "#f59e0b" : "#ef4444", fontFamily:"'Syne',sans-serif" }}>{q.fillerCount}</div>
+                                                            <div style={{ fontSize:8, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginTop:2 }}>FILLER WORDS</div>
+                                                        </div>
+                                                        <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:10, padding:"8px", textAlign:"center" }}>
+                                                            <div style={{ fontSize:14, fontWeight:800, color: q.wpm >= 120 && q.wpm <= 150 ? "#22c55e" : "#6366f1", fontFamily:"'Syne',sans-serif" }}>{q.wpm || "—"}</div>
+                                                            <div style={{ fontSize:8, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginTop:2 }}>WPM PACE</div>
+                                                        </div>
+                                                        <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:10, padding:"8px", textAlign:"center" }}>
+                                                            <div style={{ fontSize:14, fontWeight:800, color: q.starScore >= 3 ? "#22c55e" : "#a855f7", fontFamily:"'Syne',sans-serif" }}>{q.starScore > 0 ? `${q.starScore}/4` : "—"}</div>
+                                                            <div style={{ fontSize:8, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginTop:2 }}>STAR METHOD</div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
                                                     {[
                                                         { l:"Confidence",    v:q.confidence    },

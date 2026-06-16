@@ -90,13 +90,13 @@ export default function InterviewSetup() {
     const canProceed = role.trim() && experience.trim();
 
     return (
-        <div style={{ minHeight:"100vh", background:"#0a0a0f", fontFamily:"'Syne',sans-serif", color:"#f0f0f0" }}>
+        <div style={{ minHeight:"100vh", background:"#1e1e1e", fontFamily:"'Syne',sans-serif", color:"#f0f0f0" }}>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800;900&display=swap');
                 *, *::before, *::after { box-sizing:border-box; }
 
                 /* Animated background */
-                .is-bg { position:fixed; inset:0; background:#0a0a0f; z-index:0; overflow:hidden; }
+                .is-bg { position:fixed; inset:0; background:#1e1e1e; z-index:0; overflow:hidden; }
                 .is-bg::before { content:''; position:absolute; top:-40%; left:-20%; width:600px; height:600px; background:radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%); border-radius:50%; animation:drift1 8s ease-in-out infinite; }
                 .is-bg::after  { content:''; position:absolute; bottom:-30%; right:-10%; width:500px; height:500px; background:radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%); border-radius:50%; animation:drift2 10s ease-in-out infinite; }
                 @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(40px,30px)} }

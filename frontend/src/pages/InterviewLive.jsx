@@ -1,14 +1,25 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import axiosClient from "../utils/axiosClient";
-import { Mic, MicOff, ArrowRight, BrainCircuit, Volume2, Clock, ChevronRight } from "lucide-react";
+import { Mic, MicOff, ArrowRight, BrainCircuit, Volume2, Clock, Activity, AlertTriangle, Gauge } from "lucide-react";
 import { buildStyles, CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+
+// ── Filler words to detect ───────────────────────────────────────────────────
+const FILLER_WORDS = ["um", "uh", "like", "you know", "basically", "actually", "so", "i mean", "literally", "right", "okay so"];
+
+// ── STAR keywords for HR mode ────────────────────────────────────────────────
+const STAR_KEYWORDS = {
+    situation:  ["situation", "context", "background", "scenario", "when i was", "at my previous", "during"],
+    task:       ["task", "goal", "objective", "responsibility", "challenge", "needed to", "had to"],
+    action:     ["action", "i did", "i implemented", "i built", "i created", "i led", "i designed", "steps i took"],
+    result:     ["result", "outcome", "achieved", "improved", "reduced", "increased", "impact", "success", "learned"],
+};
 
 export default function InterviewLive() {
     const navigate = useNavigate();
     const interviewData = JSON.parse(sessionStorage.getItem("interviewData") || "{}");
-    const { interviewId, questions = [], userName = "Candidate" } = interviewData;
+    const { interviewId, questions: initialQuestions = [], userName = "Candidate", totalQuestions = 5 } = interviewData;
 
     const [isIntroPhase,  setIsIntroPhase]  = useState(true);
     const [isMicOn,       setIsMicOn]       = useState(true);
@@ -16,7 +27,7 @@ export default function InterviewLive() {
     const [currentIndex,  setCurrentIndex]  = useState(0);
     const [answer,        setAnswer]        = useState("");
     const [feedback,      setFeedback]      = useState("");
-    const [timeLeft,      setTimeLeft]      = useState(questions[0]?.timeLimit || 60);
+    const [timeLeft,      setTimeLeft]      = useState(initialQuestions[0]?.timeLimit || 60);
     const [selectedVoice, setSelectedVoice] = useState(null);
     const [isSubmitting,  setIsSubmitting]  = useState(false);
     const [followUp,      setFollowUp]      = useState(null);
@@ -27,9 +38,22 @@ export default function InterviewLive() {
     const [wordCount,     setWordCount]     = useState(0);
     const [totalWords,    setTotalWords]    = useState(0);
 
+    // ── Adaptive state ───────────────────────────────────────────────────────
+    const [questions,       setQuestions]       = useState(initialQuestions);
+    const [isLoadingNext,   setIsLoadingNext]   = useState(false);
+    const [adaptedDifficulty, setAdaptedDifficulty] = useState(null);
+    const [avgScore,        setAvgScore]        = useState(null);
+
+    // ── Speech intelligence state ────────────────────────────────────────────
+    const [fillerCount,   setFillerCount]   = useState(0);
+    const [wpm,           setWpm]           = useState(0);
+    const [starChecks,    setStarChecks]    = useState({ situation: false, task: false, action: false, result: false });
+    const speechStartRef = useRef(null);
+
     const recognitionRef = useRef(null);
     const timerRef       = useRef(null);
     const currentQuestion = questions[currentIndex];
+    const mode = interviewData.mode || "Technical";
 
     // ── Load voice ────────────────────────────────────────────────────────────
     useEffect(() => {
@@ -47,6 +71,38 @@ export default function InterviewLive() {
         window.speechSynthesis.onvoiceschanged = load;
     }, []);
 
+    // ── Analyze speech for fillers, WPM, STAR ────────────────────────────────
+    const analyzeSpeech = (text) => {
+        const lower = text.toLowerCase();
+
+        // Filler detection
+        let fillers = 0;
+        FILLER_WORDS.forEach(filler => {
+            const regex = new RegExp(`\\b${filler}\\b`, "gi");
+            const matches = lower.match(regex);
+            if (matches) fillers += matches.length;
+        });
+        setFillerCount(fillers);
+
+        // WPM
+        const words = text.trim().split(/\s+/).filter(Boolean).length;
+        if (speechStartRef.current) {
+            const elapsed = (Date.now() - speechStartRef.current) / 60000; // minutes
+            if (elapsed > 0.05) { // at least 3 seconds
+                setWpm(Math.round(words / elapsed));
+            }
+        }
+
+        // STAR detection (HR mode)
+        if (mode === "HR") {
+            const checks = {};
+            Object.entries(STAR_KEYWORDS).forEach(([key, keywords]) => {
+                checks[key] = keywords.some(kw => lower.includes(kw));
+            });
+            setStarChecks(checks);
+        }
+    };
+
     // ── Speech recognition ────────────────────────────────────────────────────
     useEffect(() => {
         if (!("webkitSpeechRecognition" in window)) return;
@@ -59,13 +115,19 @@ export default function InterviewLive() {
             setAnswer(prev => {
                 const updated = prev + " " + t;
                 setWordCount(updated.trim().split(/\s+/).filter(Boolean).length);
+                analyzeSpeech(updated);
                 return updated;
             });
         };
         recognitionRef.current = rec;
     }, []);
 
-    const startMic = () => { try { recognitionRef.current?.start(); } catch {} };
+    const startMic = () => {
+        try {
+            recognitionRef.current?.start();
+            if (!speechStartRef.current) speechStartRef.current = Date.now();
+        } catch {}
+    };
     const stopMic  = () => { recognitionRef.current?.stop(); };
     const toggleMic = () => { isMicOn ? stopMic() : startMic(); setIsMicOn(p => !p); };
 
@@ -95,24 +157,31 @@ export default function InterviewLive() {
         if (!selectedVoice) return;
         const run = async () => {
             if (isIntroPhase) {
-                await speakText(`Welcome ${userName}! I'm your AI interviewer today. I'll ask you ${questions.length} questions. Answer clearly and naturally. Let's begin.`);
+                await speakText(`Welcome ${userName}! I'm your AI interviewer today. This is an adaptive interview — I'll tailor my questions based on your responses. Answer clearly and naturally. Let's begin.`);
                 setIsIntroPhase(false);
-            } else if (currentQuestion) {
+            } else if (currentQuestion && !isLoadingNext) {
                 await new Promise(r => setTimeout(r, 500));
-                if (currentIndex === questions.length - 1)
+                if (currentIndex === totalQuestions - 1)
                     await speakText("This is our final question.");
+                else if (adaptedDifficulty)
+                    await speakText(`Next up, a ${adaptedDifficulty} level question.`);
                 await speakText(currentQuestion.question);
+                speechStartRef.current = Date.now();
                 if (isMicOn) startMic();
             }
         };
         run();
-    }, [selectedVoice, isIntroPhase, currentIndex]);
+    }, [selectedVoice, isIntroPhase, currentIndex, isLoadingNext]);
 
     // ── Timer ─────────────────────────────────────────────────────────────────
     useEffect(() => {
         if (isIntroPhase || !currentQuestion) return;
         setTimeLeft(currentQuestion.timeLimit || 60);
         setWordCount(0);
+        setFillerCount(0);
+        setWpm(0);
+        setStarChecks({ situation: false, task: false, action: false, result: false });
+        speechStartRef.current = null;
     }, [currentIndex, isIntroPhase]);
 
     useEffect(() => {
@@ -146,10 +215,15 @@ export default function InterviewLive() {
         clearInterval(timerRef.current);
         setIsSubmitting(true);
         setTotalWords(wordCount);
+
+        // Compute STAR score
+        const starScoreVal = Object.values(starChecks).filter(Boolean).length;
+
         try {
             const timeTaken = (currentQuestion.timeLimit || 60) - timeLeft;
             const { data } = await axiosClient.post("/api/interview/submit-answer", {
                 interviewId, questionIndex: currentIndex, answer, timeTaken,
+                fillerCount, wpm, starScore: starScoreVal,
             });
             setFeedback(data.feedback);
             await speakText(data.feedback);
@@ -162,6 +236,8 @@ export default function InterviewLive() {
                 setFollowUpAnswer("");
                 setAnswer("");
                 setWordCount(0);
+                setFillerCount(0);
+                speechStartRef.current = Date.now();
                 await speakText("One quick follow-up: " + data.followUp);
                 if (isMicOn) startMic();
             }
@@ -169,10 +245,47 @@ export default function InterviewLive() {
         finally { setIsSubmitting(false); }
     };
 
+    // ── Fetch next adaptive question ──────────────────────────────────────────
+    const fetchNextQuestion = async () => {
+        setIsLoadingNext(true);
+        try {
+            const { data } = await axiosClient.post("/api/interview/generate-next", { interviewId });
+            if (data.done && !data.question) {
+                finishInterview();
+                return false;
+            }
+            setQuestions(prev => [...prev, data.question]);
+            setAdaptedDifficulty(data.adaptedDifficulty);
+            setAvgScore(data.avgScore);
+            return true;
+        } catch (err) {
+            console.error("[fetchNextQuestion]", err);
+            return false;
+        } finally {
+            setIsLoadingNext(false);
+        }
+    };
+
     const handleNext = async () => {
-        setAnswer(""); setFeedback(""); setWordCount(0); setFollowUp(null); setIsFollowUp(false); setFollowUpAnswer("");
-        if (currentIndex + 1 >= questions.length) { finishInterview(); return; }
-        await speakText("Great. Moving to the next question.");
+        setAnswer(""); setFeedback(""); setWordCount(0); setFollowUp(null);
+        setIsFollowUp(false); setFollowUpAnswer("");
+        setFillerCount(0); setWpm(0);
+        setStarChecks({ situation: false, task: false, action: false, result: false });
+        speechStartRef.current = null;
+
+        if (currentIndex + 1 >= totalQuestions) {
+            finishInterview();
+            return;
+        }
+
+        // Fetch next adaptive question if we don't have it yet
+        if (currentIndex + 1 >= questions.length) {
+            await speakText("Great answer. Let me adapt the next question based on your performance.");
+            const success = await fetchNextQuestion();
+            if (!success) return;
+        } else {
+            await speakText("Great. Moving to the next question.");
+        }
         setCurrentIndex(p => p + 1);
     };
 
@@ -189,9 +302,11 @@ export default function InterviewLive() {
     const pct = ((timeLeft / (currentQuestion?.timeLimit || 60)) * 100);
     const timerColor = timeLeft <= 10 ? "#ef4444" : timeLeft <= 20 ? "#f59e0b" : "#a855f7";
     const diffColor  = { easy:"#22c55e", medium:"#f59e0b", hard:"#ef4444" };
+    const fillerColor = fillerCount <= 2 ? "#22c55e" : fillerCount <= 5 ? "#f59e0b" : "#ef4444";
+    const wpmColor = wpm >= 120 && wpm <= 150 ? "#22c55e" : wpm > 150 ? "#f59e0b" : wpm > 0 ? "#6366f1" : "rgba(255,255,255,0.3)";
 
     return (
-        <div style={{ minHeight:"100vh", background:"#0a0a0f", fontFamily:"'Syne',sans-serif", color:"#f0f0f0", display:"flex", flexDirection:"column" }}>
+        <div style={{ minHeight:"100vh", background:"#1e1e1e", fontFamily:"'Syne',sans-serif", color:"#f0f0f0", display:"flex", flexDirection:"column" }}>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
                 *, *::before, *::after { box-sizing:border-box; }
@@ -210,8 +325,9 @@ export default function InterviewLive() {
 
                 /* Shimmer for loading */
                 @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+                .adapt-shimmer { background:linear-gradient(90deg,rgba(168,85,247,0.05),rgba(168,85,247,0.15),rgba(168,85,247,0.05)); background-size:200% 100%; animation:shimmer 1.5s infinite; }
 
-                .il-nav { height:56px; background:rgba(10,10,15,0.9); backdrop-filter:blur(20px); border-bottom:1px solid rgba(168,85,247,0.15); display:flex; align-items:center; padding:0 20px; gap:10px; position:sticky; top:0; z-index:100; }
+                .il-nav { height:56px; background:var(--nav-bg); backdrop-filter:blur(20px); border-bottom:1px solid rgba(168,85,247,0.15); display:flex; align-items:center; padding:0 20px; gap:10px; position:sticky; top:0; z-index:100; }
                 .il-body { flex:1; display:grid; grid-template-columns:300px 1fr; overflow:hidden; height:calc(100vh - 56px); }
                 @media (max-width:768px) { .il-body { grid-template-columns:1fr; grid-template-rows:auto 1fr; } }
                 .il-sidebar { border-right:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); display:flex; flex-direction:column; padding:20px; gap:14px; overflow-y:auto; }
@@ -243,10 +359,14 @@ export default function InterviewLive() {
             <nav className="il-nav">
                 <BrainCircuit size={18} color="#a855f7"/>
                 <span style={{ fontSize:14, fontWeight:800, color:"#fff" }}>AI Mock Interview</span>
+                {/* Adaptive badge */}
+                <span style={{ padding:"3px 10px", borderRadius:20, fontSize:10, fontWeight:700, fontFamily:"'JetBrains Mono',monospace", color:"#a855f7", background:"rgba(168,85,247,0.12)", border:"1px solid rgba(168,85,247,0.25)" }}>
+                    ⚡ Adaptive
+                </span>
                 <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:16 }}>
                     {/* Question dots */}
                     <div style={{ display:"flex", gap:6 }}>
-                        {questions.map((_, i) => (
+                        {Array.from({ length: totalQuestions }).map((_, i) => (
                             <div key={i} className="progress-dot" style={{
                                 background: i < currentIndex ? "#22c55e" : i === currentIndex ? "#a855f7" : "rgba(255,255,255,0.1)",
                                 boxShadow: i === currentIndex ? "0 0 8px #a855f7" : "none",
@@ -254,8 +374,13 @@ export default function InterviewLive() {
                         ))}
                     </div>
                     <span style={{ fontSize:12, color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>
-                        {currentIndex + 1}/{questions.length}
+                        {currentIndex + 1}/{totalQuestions}
                     </span>
+                    {avgScore !== null && (
+                        <span style={{ fontSize:11, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>
+                            Avg: {avgScore}/10
+                        </span>
+                    )}
                     {isAIPlaying && (
                         <span style={{ fontSize:11, color:"#a855f7", fontFamily:"'JetBrains Mono',monospace", display:"flex", alignItems:"center", gap:5 }}>
                             <Volume2 size={12}/> Speaking
@@ -288,7 +413,7 @@ export default function InterviewLive() {
                         </div>
 
                         <div style={{ fontSize:12, color: isAIPlaying ? "#c084fc" : "rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", transition:"color 0.3s" }}>
-                            {isAIPlaying ? "● AI Speaking" : isIntroPhase ? "Preparing..." : "Listening..."}
+                            {isAIPlaying ? "● AI Speaking" : isIntroPhase ? "Preparing..." : isLoadingNext ? "Adapting..." : "Listening..."}
                         </div>
                     </div>
 
@@ -317,27 +442,70 @@ export default function InterviewLive() {
                         </div>
                     )}
 
-                    {/* Word count */}
+                    {/* ── Speech Intelligence Card ──────────────────────── */}
+                    {!isIntroPhase && !feedback && (
+                        <div className="il-card" style={{ borderColor:"rgba(99,102,241,0.2)", background:"rgba(99,102,241,0.03)" }}>
+                            <div style={{ fontSize:10, color:"#6366f1", fontFamily:"'JetBrains Mono',monospace", marginBottom:12, textTransform:"uppercase", letterSpacing:"0.5px", display:"flex", alignItems:"center", gap:6 }}>
+                                <Activity size={12}/> Speech Intelligence
+                            </div>
+
+                            {/* Filler Words */}
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                                <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                                    <AlertTriangle size={12} color={fillerColor}/>
+                                    <span style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>Fillers</span>
+                                </div>
+                                <span style={{ fontSize:16, fontWeight:800, color:fillerColor, fontFamily:"'Syne',sans-serif" }}>{fillerCount}</span>
+                            </div>
+
+                            {/* WPM */}
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                                <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                                    <Gauge size={12} color={wpmColor}/>
+                                    <span style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>WPM</span>
+                                </div>
+                                <div style={{ textAlign:"right" }}>
+                                    <span style={{ fontSize:16, fontWeight:800, color:wpmColor, fontFamily:"'Syne',sans-serif" }}>{wpm || "—"}</span>
+                                    <div style={{ fontSize:9, color:"rgba(255,255,255,0.2)", fontFamily:"'JetBrains Mono',monospace" }}>ideal: 120-150</div>
+                                </div>
+                            </div>
+
+                            {/* Word Count */}
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: mode === "HR" ? 12 : 0 }}>
+                                <span style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>Words</span>
+                                <span style={{ fontSize:16, fontWeight:800, color:"#a855f7", fontFamily:"'Syne',sans-serif" }}>{wordCount}</span>
+                            </div>
+
+                            {/* STAR Method (HR mode only) */}
+                            {mode === "HR" && (
+                                <div style={{ borderTop:"1px solid rgba(255,255,255,0.06)", paddingTop:10, marginTop:2 }}>
+                                    <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", fontFamily:"'JetBrains Mono',monospace", marginBottom:8, textTransform:"uppercase" }}>STAR Method</div>
+                                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+                                        {Object.entries(starChecks).map(([key, val]) => (
+                                            <div key={key} style={{
+                                                display:"flex", alignItems:"center", gap:5,
+                                                padding:"4px 8px", borderRadius:8,
+                                                background: val ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.02)",
+                                                border: `1px solid ${val ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.06)"}`,
+                                            }}>
+                                                <span style={{ fontSize:10, color: val ? "#22c55e" : "rgba(255,255,255,0.2)" }}>{val ? "✓" : "○"}</span>
+                                                <span style={{ fontSize:10, color: val ? "#22c55e" : "rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", textTransform:"capitalize" }}>{key}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Mic status */}
                     {!isIntroPhase && !feedback && (
                         <div className="il-card">
-                            <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", marginBottom:8, textTransform:"uppercase" }}>Answer stats</div>
-                            <div style={{ display:"flex", justifyContent:"space-between" }}>
-                                <div style={{ textAlign:"center" }}>
-                                    <div style={{ fontSize:20, fontWeight:800, color:"#a855f7", fontFamily:"'Syne',sans-serif" }}>{wordCount}</div>
-                                    <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>words</div>
-                                </div>
-                                <div style={{ textAlign:"center" }}>
-                                    <div style={{ fontSize:20, fontWeight:800, color: isMicOn ? "#22c55e" : "rgba(255,255,255,0.3)", fontFamily:"'Syne',sans-serif" }}>
-                                        {isMicOn ? "ON" : "OFF"}
-                                    </div>
-                                    <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>mic</div>
-                                </div>
-                                <div style={{ textAlign:"center" }}>
-                                    <div style={{ fontSize:20, fontWeight:800, color: currentQuestion?.difficulty ? diffColor[currentQuestion.difficulty.toLowerCase()] || "#a855f7" : "#a855f7", fontFamily:"'Syne',sans-serif" }}>
-                                        {currentQuestion?.difficulty?.[0] || "M"}
-                                    </div>
-                                    <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>level</div>
-                                </div>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                                <span style={{ fontSize:11, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>Mic</span>
+                                <span style={{ fontSize:14, fontWeight:800, color: isMicOn ? "#22c55e" : "rgba(255,255,255,0.3)", fontFamily:"'Syne',sans-serif" }}>
+                                    {isMicOn ? "ON" : "OFF"}
+                                </span>
                             </div>
                         </div>
                     )}
@@ -350,9 +518,9 @@ export default function InterviewLive() {
                     {isIntroPhase && (
                         <div className="il-card" style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, textAlign:"center", borderColor:"rgba(168,85,247,0.2)", background:"rgba(168,85,247,0.03)" }}>
                             <div style={{ fontSize:48 }}>🎙️</div>
-                            <h2 style={{ fontSize:22, fontWeight:800, color:"#fff", margin:0 }}>Your interviewer is ready</h2>
+                            <h2 style={{ fontSize:22, fontWeight:800, color:"#fff", margin:0 }}>Your AI interviewer is ready</h2>
                             <p style={{ fontSize:14, color:"rgba(255,255,255,0.4)", maxWidth:360, lineHeight:1.7, margin:0, fontFamily:"'JetBrains Mono',monospace" }}>
-                                Listen carefully to the introduction and get ready for your first question.
+                                This is an adaptive interview — questions adapt in real-time based on your answers.
                             </p>
                             <div style={{ display:"flex", gap:8, marginTop:8 }}>
                                 {Array.from({length:3}).map((_,i) => (
@@ -362,12 +530,23 @@ export default function InterviewLive() {
                         </div>
                     )}
 
+                    {/* Loading next question */}
+                    {isLoadingNext && (
+                        <div className="il-card adapt-shimmer" style={{ textAlign:"center", padding:40, borderColor:"rgba(168,85,247,0.3)" }}>
+                            <div className="il-spinner" style={{ margin:"0 auto 14px", width:20, height:20 }}/>
+                            <div style={{ fontSize:14, fontWeight:700, color:"#c084fc", marginBottom:6 }}>Adapting Next Question...</div>
+                            <div style={{ fontSize:12, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>
+                                Analyzing your performance to calibrate difficulty
+                            </div>
+                        </div>
+                    )}
+
                     {/* Question card */}
-                    {!isIntroPhase && currentQuestion && (
+                    {!isIntroPhase && currentQuestion && !isLoadingNext && (
                         <div className="il-card" style={{ borderColor:"rgba(168,85,247,0.25)", background:"rgba(168,85,247,0.04)" }}>
                             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                                 <span style={{ fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                                    Question {currentIndex + 1} of {questions.length}
+                                    Question {currentIndex + 1} of {totalQuestions}
                                 </span>
                                 <span style={{ padding:"2px 8px", borderRadius:20, fontSize:10, fontWeight:700, fontFamily:"'JetBrains Mono',monospace",
                                     color: diffColor[currentQuestion.difficulty?.toLowerCase()] || "#a855f7",
@@ -376,6 +555,11 @@ export default function InterviewLive() {
                                 }}>
                                     {currentQuestion.difficulty}
                                 </span>
+                                {adaptedDifficulty && currentIndex > 0 && (
+                                    <span style={{ padding:"2px 8px", borderRadius:20, fontSize:9, fontWeight:700, fontFamily:"'JetBrains Mono',monospace", color:"#6366f1", background:"rgba(99,102,241,0.1)", border:"1px solid rgba(99,102,241,0.25)" }}>
+                                        ⚡ Adapted
+                                    </span>
+                                )}
                                 <span style={{ marginLeft:"auto", fontSize:10, color:"rgba(255,255,255,0.2)", fontFamily:"'JetBrains Mono',monospace" }}>
                                     {currentQuestion.timeLimit}s limit
                                 </span>
@@ -392,17 +576,22 @@ export default function InterviewLive() {
                     )}
 
                     {/* Answer area */}
-                    {!isIntroPhase && (
+                    {!isIntroPhase && !isLoadingNext && (
                         <textarea className="il-textarea"
                             placeholder={feedback ? "" : "Type your answer here, or speak using the microphone..."}
                             value={answer}
-                            onChange={e => { setAnswer(e.target.value); setWordCount(e.target.value.trim().split(/\s+/).filter(Boolean).length); }}
+                            onChange={e => {
+                                setAnswer(e.target.value);
+                                const words = e.target.value.trim().split(/\s+/).filter(Boolean).length;
+                                setWordCount(words);
+                                analyzeSpeech(e.target.value);
+                            }}
                             disabled={!!feedback || isIntroPhase}
                         />
                     )}
 
                     {/* Actions */}
-                    {!isIntroPhase && !feedback && (
+                    {!isIntroPhase && !feedback && !isLoadingNext && (
                         <div style={{ display:"flex", gap:10, alignItems:"center" }}>
                             <button className={`il-mic-btn${isMicOn ? " on" : ""}${isMicOn && !isAIPlaying ? " mic-pulse" : ""}`}
                                 onClick={toggleMic} disabled={isAIPlaying}>
@@ -425,15 +614,15 @@ export default function InterviewLive() {
                                 <span style={{ fontSize:11, color:"#a855f7", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:"0.5px" }}>AI Feedback</span>
                                 {totalWords > 0 && (
                                     <span style={{ marginLeft:"auto", fontSize:11, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>
-                                        {totalWords} words answered
+                                        {totalWords} words · {fillerCount} fillers · {wpm > 0 ? `${wpm} WPM` : "typed"}
                                     </span>
                                 )}
                             </div>
                             <p style={{ fontSize:14, color:"rgba(255,255,255,0.75)", lineHeight:1.8, marginBottom:16 }}>{feedback}</p>
                             <button className="il-next-btn" onClick={handleNext}>
-                                {currentIndex + 1 >= questions.length
+                                {currentIndex + 1 >= totalQuestions
                                     ? "🏁 Finish Interview & See Report"
-                                    : <>Next Question <ArrowRight size={15}/></>
+                                    : <><Activity size={14}/> Next Adaptive Question <ArrowRight size={15}/></>
                                 }
                             </button>
                         </div>

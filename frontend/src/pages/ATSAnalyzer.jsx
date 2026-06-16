@@ -205,15 +205,15 @@ export default function ATSAnalyzer() {
     };
 
     return (
-        <div style={{ minHeight:"100vh", background:"#0a0a0f", fontFamily:"'Inter',sans-serif", color:"#f0f0f0" }}>
+        <div style={{ minHeight:"100vh", background:"#1e1e1e", fontFamily:"'Inter',sans-serif", color:"#f0f0f0" }}>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;500;600;700;800&family=Syne:wght@400;600;700;800;900&display=swap');
                 *, *::before, *::after { box-sizing:border-box; }
-                .ats-bg { position:fixed; inset:0; background:#0a0a0f; z-index:0; overflow:hidden; }
+                .ats-bg { position:fixed; inset:0; background:#1e1e1e; z-index:0; overflow:hidden; }
                 .ats-bg::before { content:''; position:absolute; top:-30%; left:-10%; width:500px; height:500px; background:radial-gradient(circle,rgba(34,197,94,0.07) 0%,transparent 70%); border-radius:50%; }
                 .ats-bg::after  { content:''; position:absolute; bottom:-20%; right:-10%; width:400px; height:400px; background:radial-gradient(circle,rgba(99,102,241,0.07) 0%,transparent 70%); border-radius:50%; }
                 .ats-wrap { position:relative; z-index:1; }
-                .ats-nav { height:60px; background:rgba(10,10,15,0.9); backdrop-filter:blur(20px); border-bottom:1px solid rgba(34,197,94,0.15); display:flex; align-items:center; padding:0 24px; gap:14px; position:sticky; top:0; z-index:100; }
+                .ats-nav { height:60px; background:var(--nav-bg); backdrop-filter:blur(20px); border-bottom:1px solid rgba(34,197,94,0.15); display:flex; align-items:center; padding:0 24px; gap:14px; position:sticky; top:0; z-index:100; }
                 .ats-back { background:none; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px 12px; color:rgba(255,255,255,0.4); cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:12px; font-family:'JetBrains Mono',monospace; transition:all 0.2s; }
                 .ats-back:hover { color:#fff; border-color:rgba(34,197,94,0.4); }
                 .ats-body { max-width:1100px; margin:0 auto; padding:40px 24px; }

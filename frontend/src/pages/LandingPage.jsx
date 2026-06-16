@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import useTheme from "../hooks/useTheme";
 import "./LandingPage.css";
+import NavAvatar from "../components/NavAvatar";
 
 import pillarCode from "../assets/pillar-code.jpg";
 import pillarMock from "../assets/pillar-mock.jpg";
@@ -92,11 +93,7 @@ function Nav() {
                   }}
                   title="Profile"
                 >
-                  {user?.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
-                  ) : (
-                    user?.firstName?.[0]?.toUpperCase()
-                  )}
+                  <NavAvatar user={user} />
                 </Link>
               </>
             ) : (
@@ -160,11 +157,7 @@ function Nav() {
                           background: "linear-gradient(135deg, var(--lp-primary), #a855f7)",
                         }}
                       >
-                        {user?.avatarUrl ? (
-                          <img src={user.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
-                        ) : (
-                          user?.firstName?.[0]?.toUpperCase()
-                        )}
+                        <NavAvatar user={user} />
                       </span>
                       Profile
                     </Link>

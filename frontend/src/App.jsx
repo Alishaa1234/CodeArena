@@ -19,13 +19,14 @@ import AdminUpload  from "./components/AdminUpload";
 import DuelPage     from "./pages/DuelPage";
 
 // ── Interview pages (integrated from interview app) ───────────────────────────
-import InterviewEntry   from "./pages/InterviewEntry";
-import InterviewSetup   from "./pages/InterviewSetup";
-import InterviewLive    from "./pages/InterviewLive";
-import InterviewReport  from "./pages/InterviewReport";
-import InterviewHistory from "./pages/InterviewHistory";
-import InterviewCoding  from "./pages/InterviewCoding";
-import ATSAnalyzer     from "./pages/ATSAnalyzer";
+import InterviewEntry     from "./pages/InterviewEntry";
+import InterviewSetup     from "./pages/InterviewSetup";
+import InterviewLive      from "./pages/InterviewLive";
+import InterviewReport    from "./pages/InterviewReport";
+import InterviewHistory   from "./pages/InterviewHistory";
+import InterviewCoding    from "./pages/InterviewCoding";
+import ATSAnalyzer        from "./pages/ATSAnalyzer";
+import InterviewAnalytics from "./pages/InterviewAnalytics";
 
 function App() {
     const dispatch = useDispatch();
@@ -80,6 +81,7 @@ function App() {
             <Route path="/interview/report"        element={isAuthenticated ? <InterviewReport />  : <Navigate to="/login" />} />
             <Route path="/interview/report/:id"    element={isAuthenticated ? <InterviewReport />  : <Navigate to="/login" />} />
             <Route path="/interview/history"       element={isAuthenticated ? <InterviewHistory /> : <Navigate to="/login" />} />
+            <Route path="/interview/analytics"     element={isAuthenticated ? <InterviewAnalytics /> : <Navigate to="/login" />} />
             <Route path="/interview/coding"        element={isAuthenticated ? <InterviewCoding />  : <Navigate to="/login" />} />
             <Route path="/ats"                     element={isAuthenticated ? <ATSAnalyzer />    : <Navigate to="/login" />} />
         </Routes>

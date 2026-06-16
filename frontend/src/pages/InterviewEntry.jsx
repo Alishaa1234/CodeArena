@@ -14,7 +14,7 @@ export default function InterviewEntry() {
     }, []);
 
     return (
-        <div style={{ minHeight:"100vh", background:"#0a0a0f", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ minHeight:"100vh", background:"#1e1e1e", display:"flex", alignItems:"center", justifyContent:"center" }}>
             <BrainCircuit size={32} color="#a855f7"/>
         </div>
     );

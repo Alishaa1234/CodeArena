@@ -10,6 +10,10 @@ const questionSchema = new mongoose.Schema({
     confidence:    { type: Number, default: 0 },
     communication: { type: Number, default: 0 },
     correctness:   { type: Number, default: 0 },
+    // ── Speech intelligence metrics ──────────────────────────
+    fillerCount:   { type: Number, default: 0 },
+    wpm:           { type: Number, default: 0 },
+    starScore:     { type: Number, default: 0 },
 });
 
 const interviewSchema = new mongoose.Schema({
@@ -28,6 +32,13 @@ const interviewSchema = new mongoose.Schema({
         type:    String,
         enum:    ["Incompleted", "completed"],
         default: "Incompleted",
+    },
+    // ── Adaptive questioning context ─────────────────────────
+    totalQuestions: { type: Number, default: 5 },
+    context: {
+        projects:   [String],
+        skills:     [String],
+        difficulty: { type: String, default: "Medium" },
     },
 }, { timestamps: true });
 

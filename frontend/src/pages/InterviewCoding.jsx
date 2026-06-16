@@ -167,11 +167,11 @@ export default function InterviewCoding() {
     const ds         = problem ? DIFF_STYLE[problem.difficulty] || DIFF_STYLE.easy : DIFF_STYLE.easy;
 
     return (
-        <div style={{ minHeight:"100vh", background:"#0a0a0f", fontFamily:"'Syne',sans-serif", color:"#f0f0f0", display:"flex", flexDirection:"column" }}>
+        <div style={{ minHeight:"100vh", background:"#1e1e1e", fontFamily:"'Syne',sans-serif", color:"#f0f0f0", display:"flex", flexDirection:"column" }}>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
                 *, *::before, *::after { box-sizing:border-box; }
-                .ic-nav { height:56px; background:rgba(10,10,15,0.95); backdrop-filter:blur(20px); border-bottom:1px solid rgba(168,85,247,0.15); display:flex; align-items:center; padding:0 20px; gap:12px; position:sticky; top:0; z-index:100; }
+                .ic-nav { height:56px; background:var(--nav-bg); backdrop-filter:blur(20px); border-bottom:1px solid rgba(168,85,247,0.15); display:flex; align-items:center; padding:0 20px; gap:12px; position:sticky; top:0; z-index:100; }
                 .ic-back { background:none; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px 10px; color:rgba(255,255,255,0.4); cursor:pointer; display:inline-flex; align-items:center; gap:5px; font-size:12px; font-family:'JetBrains Mono',monospace; transition:all 0.2s; }
                 .ic-back:hover { color:#fff; border-color:rgba(168,85,247,0.4); }
                 .ic-prob-tabs { display:flex; gap:6px; }

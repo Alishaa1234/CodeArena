@@ -105,10 +105,10 @@ const analyzeResume = async (req, res) => {
     }
 };
 
-// ── POST /interview/generate-questions ────────────────────────────────────────
+// ── POST /interview/generate-questions (Adaptive: only 1st question) ──────────
 const generateQuestion = async (req, res) => {
     try {
-        let { role, experience, mode, resumeText, projects, skills } = req.body;
+        let { role, experience, mode, resumeText, projects, skills, difficulty } = req.body;
 
         role       = role?.trim();
         experience = experience?.trim();
@@ -118,7 +118,6 @@ const generateQuestion = async (req, res) => {
             return res.status(400).json({ message: "Role, experience and mode are required" });
         }
 
-        // Use the LeetCode user from authMiddleware (req.result)
         const user = req.result;
 
         const projectText = Array.isArray(projects) && projects.length ? projects.join(", ") : "None";
@@ -129,15 +128,14 @@ const generateQuestion = async (req, res) => {
             {
                 role:    "system",
                 content: `You are a real human interviewer conducting a professional interview.
-Generate exactly 5 interview questions.
+Generate exactly 1 opening interview question.
 Rules:
-- Each question must be 15-25 words.
-- Each question must be a single complete sentence.
-- Do NOT number them.
+- The question must be 15-25 words.
+- It must be a single complete sentence.
+- Do NOT number it.
 - Do NOT add explanations or extra text.
-- One question per line only.
-Difficulty: Q1=easy, Q2=easy, Q3=medium, Q4=medium, Q5=hard.
-Make questions based on role, experience, mode, projects, skills and resume.`,
+- Difficulty: easy (warm-up question).
+Make the question based on role, experience, mode, projects, skills and resume.`,
             },
             {
                 role:    "user",
@@ -145,15 +143,11 @@ Make questions based on role, experience, mode, projects, skills and resume.`,
             },
         ];
 
-        const aiResponse    = await askAi(messages);
-        const questionsArray = aiResponse
-            .split("\n")
-            .map(q => q.trim())
-            .filter(q => q.length > 0)
-            .slice(0, 5);
+        const aiResponse = await askAi(messages);
+        const firstQ     = aiResponse.split("\n").map(q => q.trim()).filter(q => q.length > 0)[0];
 
-        if (questionsArray.length === 0) {
-            return res.status(500).json({ message: "AI failed to generate questions" });
+        if (!firstQ) {
+            return res.status(500).json({ message: "AI failed to generate question" });
         }
 
         const interview = await Interview.create({
@@ -162,17 +156,25 @@ Make questions based on role, experience, mode, projects, skills and resume.`,
             experience,
             mode,
             resumeText: safeResume,
-            questions:  questionsArray.map((q, index) => ({
-                question:  q,
-                difficulty: ["easy","easy","medium","medium","hard"][index],
-                timeLimit:  [60,60,90,90,120][index],
-            })),
+            totalQuestions: 5,
+            context: {
+                projects: Array.isArray(projects) ? projects : [],
+                skills:   Array.isArray(skills)   ? skills   : [],
+                difficulty: difficulty || "Medium",
+            },
+            questions: [{
+                question:   firstQ,
+                difficulty: "easy",
+                timeLimit:  60,
+            }],
         });
 
         res.json({
-            interviewId: interview._id,
-            userName:    user.firstName,
-            questions:   interview.questions,
+            interviewId:    interview._id,
+            userName:       user.firstName,
+            questions:      interview.questions,
+            totalQuestions: interview.totalQuestions,
+            adaptive:       true,
         });
     } catch (error) {
         console.error("[generateQuestion]", error.message);
@@ -180,10 +182,100 @@ Make questions based on role, experience, mode, projects, skills and resume.`,
     }
 };
 
-// ── POST /interview/submit-answer ─────────────────────────────────────────────
+// ── POST /interview/generate-next (Adaptive next question) ────────────────────
+const generateNextQuestion = async (req, res) => {
+    try {
+        const { interviewId } = req.body;
+        const interview = await Interview.findById(interviewId);
+        if (!interview) return res.status(404).json({ message: "Interview not found" });
+
+        const qNum = interview.questions.length + 1;
+        if (qNum > interview.totalQuestions) {
+            return res.status(400).json({ message: "All questions already generated", done: true });
+        }
+
+        // Build rolling context from previous Q&A
+        const history = interview.questions.map((q, i) => {
+            const scoreInfo = q.score ? ` [Score: ${q.score}/10]` : "";
+            return `Q${i + 1} (${q.difficulty}): ${q.question}${q.answer ? `\nAnswer: ${q.answer}${scoreInfo}` : ""}`;
+        }).join("\n\n");
+
+        // Compute average score trend to decide difficulty
+        const answeredQs = interview.questions.filter(q => q.score > 0);
+        const avgScore   = answeredQs.length
+            ? answeredQs.reduce((a, b) => a + b.score, 0) / answeredQs.length
+            : 5;
+
+        let nextDifficulty;
+        if (avgScore >= 8)      nextDifficulty = "hard";
+        else if (avgScore >= 5) nextDifficulty = "medium";
+        else                    nextDifficulty = "easy";
+
+        // For later questions, always push harder
+        if (qNum >= 4) nextDifficulty = "hard";
+        else if (qNum >= 3 && nextDifficulty === "easy") nextDifficulty = "medium";
+
+        const timeLimits = { easy: 60, medium: 90, hard: 120 };
+
+        const projectText = interview.context?.projects?.join(", ") || "None";
+        const skillsText  = interview.context?.skills?.join(", ")   || "None";
+
+        const messages = [
+            {
+                role: "system",
+                content: `You are a professional interviewer conducting question ${qNum} of ${interview.totalQuestions}.
+The candidate's average score so far is ${avgScore.toFixed(1)}/10.
+
+Generate exactly 1 ${nextDifficulty}-level interview question.
+Rules:
+- 15-25 words, single complete sentence.
+- Do NOT repeat any previous question.
+- ${avgScore < 5 ? "The candidate is struggling. Ask a simpler question to build confidence, but on a different topic." : ""}
+- ${avgScore >= 8 ? "The candidate is performing excellently. Ask a challenging, deep question that tests advanced knowledge." : ""}
+- ${avgScore >= 5 && avgScore < 8 ? "Ask a progressively harder question to test their depth." : ""}
+- Base the question on their weakest area from the history below.
+- Return ONLY the question text, nothing else.`,
+            },
+            {
+                role: "user",
+                content: `Role: ${interview.role}\nExperience: ${interview.experience}\nMode: ${interview.mode}\nProjects: ${projectText}\nSkills: ${skillsText}\n\nPrevious Q&A:\n${history}`,
+            },
+        ];
+
+        const aiResponse = await askAi(messages);
+        const nextQ      = aiResponse.split("\n").map(q => q.trim()).filter(q => q.length > 0)[0];
+
+        if (!nextQ) {
+            return res.status(500).json({ message: "AI failed to generate next question" });
+        }
+
+        interview.questions.push({
+            question:   nextQ,
+            difficulty: nextDifficulty,
+            timeLimit:  timeLimits[nextDifficulty] || 90,
+        });
+        await interview.save();
+
+        const newQuestion = interview.questions[interview.questions.length - 1];
+
+        res.json({
+            question:       newQuestion,
+            questionNumber: qNum,
+            totalQuestions: interview.totalQuestions,
+            avgScore:       Number(avgScore.toFixed(1)),
+            adaptedDifficulty: nextDifficulty,
+            done:           qNum >= interview.totalQuestions,
+        });
+    } catch (error) {
+        console.error("[generateNextQuestion]", error.message);
+        res.status(500).json({ message: `Failed to generate next question: ${error.message}` });
+    }
+};
+
+// ── POST /interview/submit-answer (with speech intelligence) ──────────────────
 const submitAnswer = async (req, res) => {
     try {
-        const { interviewId, questionIndex, answer, timeTaken } = req.body;
+        const { interviewId, questionIndex, answer, timeTaken, fillerCount, wpm, starScore } = req.body;
 
         const interview = await Interview.findById(interviewId);
         if (!interview) return res.status(404).json({ message: "Interview not found" });
@@ -206,6 +298,15 @@ const submitAnswer = async (req, res) => {
             return res.json({ feedback: question.feedback });
         }
 
+        // Build speech intelligence context for AI
+        const speechContext = [];
+        if (typeof fillerCount === "number") speechContext.push(`Filler words used: ${fillerCount}`);
+        if (typeof wpm === "number" && wpm > 0) speechContext.push(`Speaking pace: ${wpm} WPM (ideal: 120-150)`);
+        if (typeof starScore === "number" && interview.mode === "HR") speechContext.push(`STAR method adherence: ${starScore}/4 components used`);
+        const speechPrompt = speechContext.length
+            ? `\n\nSpeech metrics to factor into confidence/communication scores:\n${speechContext.join("\n")}`
+            : "";
+
         const messages = [
             {
                 role:    "system",
@@ -216,7 +317,7 @@ Score 0-10 for:
 3. Correctness – accurate, relevant, complete
 
 finalScore = average of the three (round to nearest whole number).
-Feedback: 10-15 words, professional, honest, natural.
+Feedback: 10-15 words, professional, honest, natural.${speechPrompt}
 
 Return ONLY valid JSON:
 {
@@ -242,6 +343,10 @@ Return ONLY valid JSON:
         question.correctness   = parsed.correctness;
         question.score         = parsed.finalScore;
         question.feedback      = parsed.feedback;
+        // Store speech metrics
+        question.fillerCount   = fillerCount || 0;
+        question.wpm           = wpm         || 0;
+        question.starScore     = starScore   || 0;
         await interview.save();
 
         // Generate a smart follow-up question based on the answer
@@ -359,12 +464,100 @@ const getInterviewReport = async (req, res) => {
     }
 };
 
+// ── GET /interview/analytics ──────────────────────────────────────────────────
+const getInterviewAnalytics = async (req, res) => {
+    try {
+        const userId = req.result._id;
+        const interviews = await Interview.find({ userId, status: "completed" })
+            .sort({ createdAt: 1 })
+            .lean();
+
+        if (!interviews.length) {
+            return res.json({
+                timeline: [], skillAvg: { confidence: 0, communication: 0, correctness: 0 },
+                topicMap: {}, totalCount: 0, completedCount: 0, avgImprovement: 0,
+            });
+        }
+
+        // Timeline data
+        const timeline = interviews.map(iv => {
+            const qs = iv.questions || [];
+            const total = qs.length || 1;
+            return {
+                date:  iv.createdAt,
+                score: Number((iv.finalScore || 0).toFixed(1)),
+                role:  iv.role,
+                mode:  iv.mode,
+                confidence:    Number((qs.reduce((a, q) => a + (q.confidence || 0), 0) / total).toFixed(1)),
+                communication: Number((qs.reduce((a, q) => a + (q.communication || 0), 0) / total).toFixed(1)),
+                correctness:   Number((qs.reduce((a, q) => a + (q.correctness || 0), 0) / total).toFixed(1)),
+                avgFillers:    Number((qs.reduce((a, q) => a + (q.fillerCount || 0), 0) / total).toFixed(1)),
+                avgWpm:        Number((qs.reduce((a, q) => a + (q.wpm || 0), 0) / total).toFixed(0)),
+            };
+        });
+
+        // Skill averages
+        const totals = { confidence: 0, communication: 0, correctness: 0 };
+        interviews.forEach(iv => {
+            const qs = iv.questions || [];
+            const total = qs.length || 1;
+            totals.confidence    += qs.reduce((a, q) => a + (q.confidence || 0), 0) / total;
+            totals.communication += qs.reduce((a, q) => a + (q.communication || 0), 0) / total;
+            totals.correctness   += qs.reduce((a, q) => a + (q.correctness || 0), 0) / total;
+        });
+        const n = interviews.length;
+        const skillAvg = {
+            confidence:    Number((totals.confidence / n).toFixed(1)),
+            communication: Number((totals.communication / n).toFixed(1)),
+            correctness:   Number((totals.correctness / n).toFixed(1)),
+        };
+
+        // Topic heatmap
+        const topicMap = {};
+        interviews.forEach(iv => {
+            const key = iv.role;
+            if (!topicMap[key]) topicMap[key] = { count: 0, totalScore: 0 };
+            topicMap[key].count      += 1;
+            topicMap[key].totalScore += iv.finalScore || 0;
+        });
+        Object.keys(topicMap).forEach(key => {
+            topicMap[key].avgScore = Number((topicMap[key].totalScore / topicMap[key].count).toFixed(1));
+        });
+
+        // Avg improvement (last 5 vs first 5)
+        let avgImprovement = 0;
+        if (n >= 4) {
+            const half     = Math.floor(n / 2);
+            const firstAvg = interviews.slice(0, half).reduce((a, iv) => a + (iv.finalScore || 0), 0) / half;
+            const lastAvg  = interviews.slice(-half).reduce((a, iv) => a + (iv.finalScore || 0), 0) / half;
+            avgImprovement = Number((lastAvg - firstAvg).toFixed(1));
+        }
+
+        // Total count including incomplete
+        const totalCount = await Interview.countDocuments({ userId });
+
+        res.json({
+            timeline,
+            skillAvg,
+            topicMap,
+            totalCount,
+            completedCount: n,
+            avgImprovement,
+        });
+    } catch (error) {
+        console.error("[getInterviewAnalytics]", error.message);
+        res.status(500).json({ message: `Failed to get analytics: ${error.message}` });
+    }
+};
+
 module.exports = {
     upload,
     analyzeResume,
     generateQuestion,
+    generateNextQuestion,
     submitAnswer,
     finishInterview,
     getMyInterviews,
     getInterviewReport,
+    getInterviewAnalytics,
 };
