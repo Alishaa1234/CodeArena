@@ -4,6 +4,7 @@ const axios   = require("axios");
 const multer  = require("multer");
 const ATSAnalysis = require("../models/atsAnalysis");
 const { computeFitScore, extractSkillEntities } = require("../utils/nlpPipeline");
+const { atsQueue } = require("../config/atsQueue");
 
 let pdfjsLib;
 (async () => {
@@ -96,7 +97,8 @@ const detectSections = async (resumeText) => {
         {
             role:    "system",
             content: `Analyze this resume and detect sections. Score each section 0-100 for ATS friendliness.
-Return ONLY JSON:
+Return ONLY a JSON object following this exact schema. Do not copy the placeholder data below; populate the values with actual findings from the resume. If no bullets exist in the resume, return an empty array for "bullets".
+Schema format:
 {
   "sections": {
     "contact":    { "present": true,  "score": 90, "issue": "" },
@@ -108,9 +110,9 @@ Return ONLY JSON:
   },
   "format": {
     "score": 80,
-    "issues": ["Uses tables which ATS can't parse", "Missing quantified achievements"]
+    "issues": ["uses invalid elements", "missing metrics"]
   },
-  "bullets": ["Developed React components", "Managed team of 5"]
+  "bullets": ["actual weak bullet point text from resume", "another weak bullet point text from resume"]
 }`,
         },
         { role: "user", content: resumeText.slice(0, 3000) },
@@ -132,24 +134,25 @@ const generateLLMAnalysis = async (resumeText, jdText, fitScore, missingSkills, 
 
 The candidate scored ${fitScore}/100 on ATS fit. Their missing skills are: ${missingSkills.slice(0, 15).join(", ")}.
 
-Return ONLY JSON:
+Return ONLY a JSON object following this exact schema. Do not output the example values below; instead, extract actual data based on the candidate's resume and job description. If no skill gaps exist, return empty arrays.
+Schema format:
 {
   "justification": "2-4 sentence explanation of WHY the candidate scored ${fitScore}/100. Be specific about strengths and weaknesses.",
   "skillGaps": [
     {
-      "skill": "Docker",
-      "severity": "critical",
-      "reason": "Required in JD, not mentioned in resume",
-      "action": "Add Docker experience or containerization projects"
+      "skill": "name of missing/weak skill",
+      "severity": "critical/important/nice-to-have",
+      "reason": "reason why it is a gap based on JD",
+      "action": "recommended action to resolve the gap"
     }
   ],
   "learningPath": [
     {
-      "skill": "Docker",
+      "skill": "name of the skill to learn",
       "priority": 1,
-      "timeEstimate": "2 weeks",
-      "resources": ["Docker Official Tutorial", "Docker for Node.js Developers"],
-      "description": "Learn containerization fundamentals and Dockerfile creation"
+      "timeEstimate": "estimated time, e.g. 2 weeks",
+      "resources": ["name/URL of resource 1", "name/URL of resource 2"],
+      "description": "short description of what to study"
     }
   ]
 }
@@ -180,17 +183,18 @@ const generateSuggestions = async (resumeText, jdText, missingKeywords) => {
     const suggestionsRaw = await askAi([
         {
             role:    "system",
-            content: `You are an expert ATS consultant. Analyze the resume against the job description.
-Return ONLY JSON:
+            content: `You are an expert ATS consultant. Analyze the resume against the job description. Identify missing keywords from the job description and extract weak, unquantified, or vague bullet points from the candidate's actual resume to suggest improvements for.
+Return ONLY a JSON object following this exact schema. Do not output the example values below; instead, extract actual data from the provided resume and job description. If no weak bullets are found, return an empty array for "weakBullets".
+Schema format:
 {
   "missingKeywordsToAdd": [
-    { "keyword": "Docker", "context": "Add to Skills section", "suggestedBullet": "Containerized applications using Docker" }
+    { "keyword": "missing keyword name", "context": "where to add it in resume", "suggestedBullet": "suggested bullet point showing how they could write it" }
   ],
   "weakBullets": [
-    { "original": "Worked on React", "issue": "Vague, no metrics", "improved": "Built 15+ reusable React components reducing development time by 30%" }
+    { "original": "the actual weak bullet point text from the candidate's resume", "issue": "why it is weak (e.g., vague, no metrics)", "improved": "a rewritten, high-impact version with metrics and action verbs" }
   ],
-  "topSuggestions": ["Add quantified achievements", "Include missing keywords in Skills"],
-  "summaryFeedback": "2-3 sentence overall assessment"
+  "topSuggestions": ["list of key recommendations tailored to this candidate"],
+  "summaryFeedback": "2-3 sentence overall assessment of how well the resume matches the job description"
 }`,
         },
         {
@@ -244,159 +248,74 @@ const getBenchmark = (score, role = "") => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-// ── POST /ats/analyze — Full pipeline ─────────────────────────────────────────
+// ── POST /ats/analyze — Enqueue job (returns immediately) ─────────────────────
 const analyzeATS = async (req, res) => {
-    const filepath = req.file?.path;
     try {
         const { jdText, role } = req.body;
         if (!req.file) return res.status(400).json({ message: "Resume PDF required" });
         if (!jdText?.trim()) return res.status(400).json({ message: "Job description required" });
 
-        // 1. Extract resume text from PDF
-        const resumeText = await extractPdfText(filepath);
-
-        // 2. NLP Pipeline — TF-IDF + Cosine Similarity + Skill Extraction
-        const nlpResult = computeFitScore(resumeText, jdText);
-
-        // 3. AI Keyword extraction (supplements NLP extraction)
-        const aiKeywords = await extractKeywordsAI(jdText);
-        const effectiveRole = role || aiKeywords.role || "Software Engineer";
-
-        // 4. Merge NLP + AI keywords for comprehensive matching
-        const resumeLower = resumeText.toLowerCase();
-        const allAiKeywords = [
-            ...(aiKeywords.technical      || []),
-            ...(aiKeywords.tools          || []),
-            ...(aiKeywords.soft           || []),
-            ...(aiKeywords.qualifications || []),
-        ];
-
-        // Enhanced matching: combine NLP pipeline results with AI keyword matching
-        const aiMatched = [];
-        const aiMissing = [];
-        allAiKeywords.forEach(kw => {
-            const kwLower = kw.toLowerCase();
-            if (resumeLower.includes(kwLower)) {
-                aiMatched.push(kw);
-            } else {
-                const words = kwLower.split(/\s+/);
-                const anyMatch = words.some(w => w.length > 3 && resumeLower.includes(w));
-                if (anyMatch) aiMatched.push(kw);
-                else aiMissing.push(kw);
-            }
+        // Enqueue the heavy pipeline as a background job
+        const job = await atsQueue.add("analyze", {
+            filepath: req.file.path,
+            jdText,
+            role:   role || "",
+            userId: req.result._id.toString(),
+        }, {
+            removeOnComplete: { age: 3600 },  // keep completed jobs for 1 hour
+            removeOnFail:     { age: 7200 },  // keep failed jobs for 2 hours
         });
 
-        // 5. Detect resume sections via AI
-        const sectionData = await detectSections(resumeText);
-
-        // 6. Role-specific weighted scoring
-        const weights    = getRoleWeights(effectiveRole);
-        const techScore  = nlpResult.keywordMatchScore;
-        const toolScore  = nlpResult.keywordMatchScore; // simplified
-        const softScore  = Math.round(
-            (nlpResult.keywords.categories.jd.soft.length > 0
-                ? nlpResult.keywords.categories.jd.soft.filter(s =>
-                    resumeLower.includes(s.toLowerCase())
-                ).length / nlpResult.keywords.categories.jd.soft.length
-                : 0.7) * 100
-        );
-        const fmtScore   = sectionData.format?.score || 70;
-
-        const weightedScore = Math.round(
-            techScore  * weights.technical +
-            softScore  * weights.soft      +
-            toolScore  * weights.tools     +
-            fmtScore   * weights.format
-        );
-
-        // Final score: blend NLP fit score with weighted AI score
-        const finalScore = Math.round(nlpResult.fitScore * 0.4 + weightedScore * 0.6);
-
-        // 7. Benchmark
-        const benchmark = getBenchmark(finalScore, effectiveRole);
-
-        // 8. Combine all missing keywords
-        const allMissing = [...new Set([...nlpResult.keywords.missing, ...aiMissing])];
-        const allMatched = [...new Set([...nlpResult.keywords.matched, ...aiMatched])];
-
-        // 9. LLM Analysis — justification + skill gaps + learning path
-        const llmAnalysis = await generateLLMAnalysis(
-            resumeText, jdText, finalScore, allMissing, effectiveRole
-        );
-
-        // 10. AI Suggestions
-        const suggestions = await generateSuggestions(resumeText, jdText, allMissing);
-
-        // 11. Clean up uploaded file
-        if (filepath) fs.unlinkSync(filepath);
-
-        // 12. Save to MongoDB
-        const analysisDoc = await ATSAnalysis.create({
-            userId:            req.result._id,
-            resumeText:        resumeText.slice(0, 10000),
-            jdText:            jdText.slice(0, 5000),
-            role:              effectiveRole,
-            fitScore:          finalScore,
-            similarityScore:   nlpResult.similarityScore,
-            keywordMatchScore: nlpResult.keywordMatchScore,
-            formatScore:       fmtScore,
-            keywordAnalysis: {
-                matched:    allMatched,
-                missing:    allMissing,
-                partial:    nlpResult.keywords.partial || [],
-                total:      allAiKeywords.length + nlpResult.keywords.total,
-                categories: nlpResult.keywords.categories,
-            },
-            sectionScores:   sectionData.sections || {},
-            formatAnalysis:  sectionData.format || {},
-            benchmark,
-            suggestions: {
-                missingKeywords: suggestions.missingKeywordsToAdd || [],
-                weakBullets:     suggestions.weakBullets           || [],
-                topSuggestions:  suggestions.topSuggestions        || [],
-                summary:         suggestions.summaryFeedback       || "",
-            },
-            llmJustification: llmAnalysis.justification || "",
-            skillGaps:        llmAnalysis.skillGaps      || [],
-            learningPath:     llmAnalysis.learningPath   || [],
-            tfidfMeta:        nlpResult.tfidf,
-        });
-
-        // 13. Send response
-        res.json({
-            _id:               analysisDoc._id,
-            score:             finalScore,
-            similarityScore:   nlpResult.similarityScore,
-            keywordMatchScore: nlpResult.keywordMatchScore,
-            role:              effectiveRole,
-            keywords: {
-                matched:    allMatched,
-                missing:    allMissing,
-                partial:    nlpResult.keywords.partial || [],
-                score:      nlpResult.keywordMatchScore,
-                total:      allAiKeywords.length,
-                categories: nlpResult.keywords.categories,
-            },
-            sections:        sectionData.sections || {},
-            format:          sectionData.format   || {},
-            benchmark,
-            suggestions: {
-                missingKeywords: suggestions.missingKeywordsToAdd || [],
-                weakBullets:     suggestions.weakBullets           || [],
-                topSuggestions:  suggestions.topSuggestions        || [],
-                summary:         suggestions.summaryFeedback       || "",
-            },
-            llmJustification: llmAnalysis.justification || "",
-            skillGaps:        llmAnalysis.skillGaps      || [],
-            learningPath:     llmAnalysis.learningPath   || [],
-            tfidfMeta:        nlpResult.tfidf,
-            resumeText:       resumeText.slice(0, 500),
-        });
+        // Return immediately with the job ID
+        res.json({ jobId: job.id });
 
     } catch (err) {
-        if (filepath && fs.existsSync(filepath)) fs.unlinkSync(filepath);
+        // Clean up file if enqueue itself fails
+        if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         console.error("[analyzeATS]", err.message);
         res.status(500).json({ message: `ATS analysis failed: ${err.message}` });
+    }
+};
+
+
+// ── GET /ats/job/:jobId — Poll job status ─────────────────────────────────────
+const getJobStatus = async (req, res) => {
+    try {
+        const job = await atsQueue.getJob(req.params.jobId);
+        if (!job) return res.status(404).json({ message: "Job not found" });
+
+        const state = await job.getState();
+
+        if (state === "completed") {
+            return res.json({
+                status:     "completed",
+                analysisId: job.returnvalue?.analysisId || null,
+            });
+        }
+
+        if (state === "failed") {
+            return res.json({
+                status: "failed",
+                error:  job.failedReason || "Unknown error",
+            });
+        }
+
+        if (state === "active") {
+            const progress = job.progress || {};
+            return res.json({
+                status:  "processing",
+                stage:   progress.stage   || "starting",
+                label:   progress.label   || "Starting analysis...",
+                percent: progress.percent || 0,
+            });
+        }
+
+        // waiting, delayed, etc.
+        return res.json({ status: "queued", percent: 0 });
+
+    } catch (err) {
+        console.error("[getJobStatus]", err.message);
+        res.status(500).json({ message: "Failed to check job status" });
     }
 };
 
@@ -518,4 +437,17 @@ const deleteAnalysis = async (req, res) => {
 };
 
 
-module.exports = { upload, analyzeATS, rewriteBullet, extractJD, getHistory, getAnalysis, deleteAnalysis };
+// ── Route handlers ────────────────────────────────────────────────────────────
+module.exports = { upload, analyzeATS, getJobStatus, rewriteBullet, extractJD, getHistory, getAnalysis, deleteAnalysis };
+
+// ── Exported for the BullMQ worker (not route handlers) ───────────────────────
+module.exports.extractPdfText       = extractPdfText;
+module.exports.extractKeywordsAI    = extractKeywordsAI;
+module.exports.detectSections       = detectSections;
+module.exports.generateLLMAnalysis  = generateLLMAnalysis;
+module.exports.generateSuggestions  = generateSuggestions;
+module.exports.getRoleWeights       = getRoleWeights;
+module.exports.getBenchmark         = getBenchmark;
+module.exports.computeFitScore      = computeFitScore;
+module.exports.extractSkillEntities = extractSkillEntities;
+module.exports.ATSAnalysis          = ATSAnalysis;

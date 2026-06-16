@@ -30,6 +30,12 @@ export default function ATSAnalyzer() {
     const [history,      setHistory]      = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
 
+    // Job queue polling state
+    const [jobId,        setJobId]        = useState(null);
+    const [jobStatus,    setJobStatus]    = useState(null);  // queued | processing | completed | failed
+    const [jobStage,     setJobStage]     = useState("");    // current stage label
+    const [jobPercent,   setJobPercent]   = useState(0);
+
     // Fetch history on mount
     useEffect(() => {
         fetchHistory();
@@ -87,6 +93,9 @@ export default function ATSAnalyzer() {
         if (!resumeFile || !jdText.trim()) return;
         setLoading(true);
         setError(null);
+        setJobStatus(null);
+        setJobStage("");
+        setJobPercent(0);
         try {
             const fd = new FormData();
             fd.append("resume", resumeFile);
@@ -95,13 +104,69 @@ export default function ATSAnalyzer() {
             const { data } = await axiosClient.post("/ats/analyze", fd, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-            setReport(data);
-            setStep(2);
-            setActiveTab("overview");
-            fetchHistory(); // refresh history
+
+            // Backend now returns { jobId } — start polling
+            const newJobId = data.jobId;
+            setJobId(newJobId);
+            setJobStatus("queued");
+            setJobStage("Queued — waiting to start...");
+            setLoading(false);
+
+            // Poll for job status
+            let attempts = 0;
+            const maxAttempts = 60; // 60 × 2s = 2 minutes max
+            const poll = setInterval(async () => {
+                attempts++;
+                try {
+                    const { data: statusData } = await axiosClient.get(`/ats/job/${newJobId}`);
+
+                    if (statusData.status === "completed") {
+                        clearInterval(poll);
+                        setJobStatus("completed");
+                        setJobPercent(100);
+                        setJobStage("Analysis complete!");
+
+                        // Fetch the full report
+                        if (statusData.analysisId) {
+                            const { data: reportData } = await axiosClient.get(`/ats/analysis/${statusData.analysisId}`);
+                            setReport(reportData);
+                        }
+                        setStep(2);
+                        setActiveTab("overview");
+                        setJobId(null);
+                        setJobStatus(null);
+                        fetchHistory();
+                        return;
+                    }
+
+                    if (statusData.status === "failed") {
+                        clearInterval(poll);
+                        setJobStatus("failed");
+                        setError(statusData.error || "Analysis failed. Please try again.");
+                        setJobId(null);
+                        return;
+                    }
+
+                    // Active / queued
+                    setJobStatus(statusData.status);
+                    setJobStage(statusData.label || statusData.stage || "Processing...");
+                    setJobPercent(statusData.percent || 0);
+
+                } catch (pollErr) {
+                    // Ignore transient polling errors
+                    console.warn("Poll error:", pollErr.message);
+                }
+
+                if (attempts >= maxAttempts) {
+                    clearInterval(poll);
+                    setError("Analysis timed out. Please try again.");
+                    setJobStatus("failed");
+                    setJobId(null);
+                }
+            }, 2000);
+
         } catch (err) {
             setError(err.displayMessage || "Analysis failed. Please try again.");
-        } finally {
             setLoading(false);
         }
     };
@@ -140,9 +205,9 @@ export default function ATSAnalyzer() {
     };
 
     return (
-        <div style={{ minHeight:"100vh", background:"#0a0a0f", fontFamily:"'Syne',sans-serif", color:"#f0f0f0" }}>
+        <div style={{ minHeight:"100vh", background:"#0a0a0f", fontFamily:"'Inter',sans-serif", color:"#f0f0f0" }}>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800;900&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;500;600;700;800&family=Syne:wght@400;600;700;800;900&display=swap');
                 *, *::before, *::after { box-sizing:border-box; }
                 .ats-bg { position:fixed; inset:0; background:#0a0a0f; z-index:0; overflow:hidden; }
                 .ats-bg::before { content:''; position:absolute; top:-30%; left:-10%; width:500px; height:500px; background:radial-gradient(circle,rgba(34,197,94,0.07) 0%,transparent 70%); border-radius:50%; }
@@ -154,7 +219,7 @@ export default function ATSAnalyzer() {
                 .ats-body { max-width:1100px; margin:0 auto; padding:40px 24px; }
                 .ats-hero { text-align:center; margin-bottom:40px; }
                 .ats-badge { display:inline-flex; align-items:center; gap:8px; padding:6px 16px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.25); border-radius:20px; font-size:12px; color:#22c55e; font-family:'JetBrains Mono',monospace; margin-bottom:16px; }
-                .ats-h1 { font-size:38px; font-weight:900; letter-spacing:-1px; background:linear-gradient(135deg,#fff 0%,#22c55e 60%,#6366f1 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0 0 12px; }
+                .ats-h1 { font-size:38px; font-weight:800; font-family:'Sora',sans-serif; letter-spacing:-0.5px; background:linear-gradient(135deg,#fff 0%,#22c55e 60%,#6366f1 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0 0 12px; }
                 .ats-sub { font-size:14px; color:rgba(255,255,255,0.35); font-family:'JetBrains Mono',monospace; }
                 .ats-steps { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:36px; }
                 .ats-step-dot { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; border:2px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.3); transition:all 0.3s; }
@@ -174,10 +239,10 @@ export default function ATSAnalyzer() {
                 .ats-textarea { width:100%; padding:14px 16px; border-radius:11px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04); color:#f0f0f0; font-size:13px; outline:none; font-family:'JetBrains Mono',monospace; resize:vertical; line-height:1.7; transition:all 0.2s; }
                 .ats-textarea:focus { border-color:#22c55e; }
                 .ats-textarea::placeholder { color:rgba(255,255,255,0.15); }
-                .ats-btn { width:100%; padding:14px; border-radius:13px; border:none; background:linear-gradient(135deg,#22c55e,#16a34a); color:#fff; font-size:15px; font-weight:800; cursor:pointer; font-family:'Syne',sans-serif; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+                .ats-btn { width:100%; padding:14px; border-radius:13px; border:none; background:linear-gradient(135deg,#22c55e,#16a34a); color:#fff; font-size:15px; font-weight:700; cursor:pointer; font-family:'Sora',sans-serif; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; }
                 .ats-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 28px rgba(34,197,94,0.35); }
                 .ats-btn:disabled { opacity:0.35; cursor:not-allowed; transform:none; }
-                .ats-sec-btn { padding:9px 18px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:none; color:rgba(255,255,255,0.5); font-size:13px; font-weight:700; cursor:pointer; font-family:'Syne',sans-serif; transition:all 0.15s; display:inline-flex; align-items:center; gap:7px; }
+                .ats-sec-btn { padding:9px 18px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:none; color:rgba(255,255,255,0.5); font-size:13px; font-weight:700; cursor:pointer; font-family:'Sora',sans-serif; transition:all 0.15s; display:inline-flex; align-items:center; gap:7px; }
                 .ats-sec-btn:hover:not(:disabled) { border-color:rgba(34,197,94,0.4); color:#22c55e; }
                 .ats-sec-btn:disabled { opacity:0.3; cursor:not-allowed; }
                 .ats-error { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:12px 16px; font-size:12px; color:#f87171; font-family:'JetBrains Mono',monospace; margin-bottom:16px; }
@@ -187,6 +252,8 @@ export default function ATSAnalyzer() {
                 @keyframes scoreReveal { from { transform:scale(0.8); opacity:0; } to { transform:scale(1); opacity:1; } }
                 @keyframes ringPulse { 0%,100% { box-shadow:0 0 0 0 rgba(34,197,94,0); } 50% { box-shadow:0 0 30px 8px rgba(34,197,94,0.15); } }
                 @keyframes slideInRight { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+                @keyframes progressPulse { 0%,100% { opacity:0.7; } 50% { opacity:1; } }
+                @keyframes progressBarGlow { 0% { box-shadow: 0 0 8px rgba(34,197,94,0.3); } 50% { box-shadow: 0 0 20px rgba(34,197,94,0.5); } 100% { box-shadow: 0 0 8px rgba(34,197,94,0.3); } }
 
                 /* Report styles */
                 .ats-report-grid { display:grid; grid-template-columns:280px 1fr; gap:20px; }
@@ -200,7 +267,7 @@ export default function ATSAnalyzer() {
                 .ats-bullet-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:16px; margin-bottom:10px; }
                 .ats-bullet-original { font-size:13px; color:rgba(255,255,255,0.6); font-family:'JetBrains Mono',monospace; line-height:1.6; margin-bottom:10px; }
                 .ats-bullet-rewritten { font-size:13px; color:#22c55e; font-family:'JetBrains Mono',monospace; line-height:1.6; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.2); border-radius:10px; padding:12px; }
-                .ats-rewrite-btn { padding:6px 14px; border-radius:8px; border:1px solid rgba(34,197,94,0.3); background:rgba(34,197,94,0.08); color:#22c55e; font-size:12px; font-weight:700; cursor:pointer; font-family:'Syne',sans-serif; transition:all 0.15s; display:inline-flex; align-items:center; gap:6px; }
+                .ats-rewrite-btn { padding:6px 14px; border-radius:8px; border:1px solid rgba(34,197,94,0.3); background:rgba(34,197,94,0.08); color:#22c55e; font-size:12px; font-weight:700; cursor:pointer; font-family:'Sora',sans-serif; transition:all 0.15s; display:inline-flex; align-items:center; gap:6px; }
                 .ats-rewrite-btn:hover:not(:disabled) { background:rgba(34,197,94,0.15); }
                 .ats-rewrite-btn:disabled { opacity:0.4; cursor:not-allowed; }
                 .ats-copy-btn { padding:5px 10px; border-radius:7px; border:1px solid rgba(255,255,255,0.08); background:none; color:rgba(255,255,255,0.4); font-size:11px; cursor:pointer; font-family:'JetBrains Mono',monospace; transition:all 0.15s; display:inline-flex; align-items:center; gap:5px; }
@@ -210,7 +277,7 @@ export default function ATSAnalyzer() {
 
                 /* Tab styles */
                 .ats-tabs { display:flex; gap:4px; background:rgba(255,255,255,0.04); border-radius:14px; padding:4px; margin-bottom:24px; border:1px solid rgba(255,255,255,0.06); overflow-x:auto; }
-                .ats-tab { flex:1; padding:10px 16px; border-radius:11px; border:none; background:none; color:rgba(255,255,255,0.4); font-size:12px; font-weight:700; cursor:pointer; font-family:'Syne',sans-serif; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; }
+                .ats-tab { flex:1; padding:10px 16px; border-radius:11px; border:none; background:none; color:rgba(255,255,255,0.4); font-size:12px; font-weight:700; cursor:pointer; font-family:'Sora',sans-serif; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; }
                 .ats-tab:hover { color:rgba(255,255,255,0.7); }
                 .ats-tab.active { background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); }
 
@@ -243,7 +310,7 @@ export default function ATSAnalyzer() {
                     <button className="ats-back" onClick={() => navigate("/")}>
                         <ChevronLeft size={13}/>Back
                     </button>
-                    <span style={{ fontSize:14, fontWeight:800, color:"#fff" }}>🎯 ATS Resume Analyzer</span>
+                    <span style={{ fontSize:14, fontWeight:800, color:"#fff", fontFamily:"'Sora',sans-serif" }}>🎯 ATS Resume Analyzer</span>
                     {step === 2 && (
                         <button className="ats-back" style={{ marginLeft:"auto" }}
                             onClick={() => { setStep(0); setReport(null); setResumeFile(null); setJdText(""); setRewritten({}); }}>
@@ -278,11 +345,89 @@ export default function ATSAnalyzer() {
 
                     {error && <div className="ats-error">{error}</div>}
 
+                    {/* Processing State — Job Queue Progress */}
+                    {jobId && jobStatus && jobStatus !== "completed" && jobStatus !== "failed" && (
+                        <div style={{ maxWidth: 520, margin: "0 auto", animation: "fadeIn 0.4s ease-out" }}>
+                            <div className="ats-card" style={{ textAlign: "center", padding: 40 }}>
+                                <div style={{ marginBottom: 28 }}>
+                                    <div style={{
+                                        width: 72, height: 72, margin: "0 auto 20px",
+                                        borderRadius: "50%",
+                                        background: "rgba(34,197,94,0.08)",
+                                        border: "2px solid rgba(34,197,94,0.25)",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        animation: "progressBarGlow 2s ease-in-out infinite"
+                                    }}>
+                                        <Brain size={30} style={{ color: "#22c55e", animation: "progressPulse 1.5s ease-in-out infinite" }} />
+                                    </div>
+                                    <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", marginBottom: 8, fontFamily: "'Sora',sans-serif" }}>
+                                        Analyzing Your Resume
+                                    </div>
+                                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: "'JetBrains Mono',monospace", marginBottom: 24 }}>
+                                        {jobStage || "Starting analysis..."}
+                                    </div>
+                                </div>
+
+                                {/* Progress bar */}
+                                <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 8, height: 10, overflow: "hidden", marginBottom: 12 }}>
+                                    <div style={{
+                                        height: "100%", borderRadius: 8,
+                                        background: "linear-gradient(90deg, #22c55e, #6366f1)",
+                                        width: `${jobPercent}%`,
+                                        transition: "width 0.6s ease-out",
+                                        animation: "progressBarGlow 2s ease-in-out infinite"
+                                    }} />
+                                </div>
+                                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "'JetBrains Mono',monospace" }}>
+                                    {jobPercent}% complete
+                                </div>
+
+                                {/* Stage indicators */}
+                                <div style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 8, textAlign: "left" }}>
+                                    {[
+                                        { key: "parsing",     label: "Parse PDF text",           pct: 5 },
+                                        { key: "nlp",         label: "NLP pipeline (TF-IDF)",    pct: 15 },
+                                        { key: "keywords",    label: "AI keyword extraction",    pct: 30 },
+                                        { key: "sections",    label: "Section analysis",         pct: 45 },
+                                        { key: "scoring",     label: "Weighted scoring",         pct: 55 },
+                                        { key: "llm",         label: "AI gap analysis",          pct: 70 },
+                                        { key: "suggestions", label: "Build recommendations",    pct: 85 },
+                                        { key: "saving",      label: "Save report",              pct: 95 },
+                                    ].map(s => {
+                                        const done  = jobPercent > s.pct;
+                                        const active = !done && jobPercent >= (s.pct - 15);
+                                        return (
+                                            <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0" }}>
+                                                <div style={{
+                                                    width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                                                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10,
+                                                    ...(done
+                                                        ? { background: "rgba(34,197,94,0.15)", border: "1px solid #22c55e", color: "#22c55e" }
+                                                        : active
+                                                            ? { background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.4)", color: "#22c55e", animation: "progressPulse 1s infinite" }
+                                                            : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.2)" })
+                                                }}>
+                                                    {done ? "✓" : active ? <div className="ats-spinner" style={{ width: 10, height: 10 }}/> : ""}
+                                                </div>
+                                                <span style={{
+                                                    fontSize: 12, fontFamily: "'JetBrains Mono',monospace",
+                                                    color: done ? "#22c55e" : active ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.2)"
+                                                }}>
+                                                    {s.label}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Step 0 — Upload Resume */}
                     {step === 0 && (
                         <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:24, alignItems:"start" }}>
                             <div className="ats-card">
-                                <div style={{ fontSize:17, fontWeight:800, color:"#fff", marginBottom:20 }}>
+                                <div style={{ fontSize:17, fontWeight:800, color:"#fff", marginBottom:20, fontFamily:"'Sora',sans-serif" }}>
                                     📄 Upload Your Resume
                                 </div>
 
@@ -362,7 +507,7 @@ export default function ATSAnalyzer() {
                     {/* Step 1 — Job Description */}
                     {step === 1 && (
                         <div className="ats-card" style={{ maxWidth:700, margin:"0 auto" }}>
-                            <div style={{ fontSize:17, fontWeight:800, color:"#fff", marginBottom:20 }}>
+                            <div style={{ fontSize:17, fontWeight:800, color:"#fff", marginBottom:20, fontFamily:"'Sora',sans-serif" }}>
                                 📋 Add Job Description
                             </div>
 
@@ -416,14 +561,14 @@ export default function ATSAnalyzer() {
                                         background:`radial-gradient(circle at center, ${scoreColor}08 0%, transparent 70%)`,
                                         position:"relative",
                                     }}>
-                                        <div style={{ fontSize:42, fontWeight:900, color:scoreColor, fontFamily:"'Syne',sans-serif", lineHeight:1 }}>{score}</div>
+                                        <div style={{ fontSize:42, fontWeight:800, color:scoreColor, fontFamily:"'Sora',sans-serif", lineHeight:1 }}>{score}</div>
                                         <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>/100</div>
                                     </div>
                                     <div style={{ fontSize:13, fontWeight:700, color:scoreColor, marginTop:10 }}>{scoreLabel}</div>
                                 </div>
 
                                 <div style={{ flex:1, minWidth:250 }}>
-                                    <div style={{ fontSize:22, fontWeight:900, color:"#fff", marginBottom:8 }}>
+                                    <div style={{ fontSize:22, fontWeight:800, color:"#fff", marginBottom:8, fontFamily:"'Sora',sans-serif" }}>
                                         ATS Score for {report.role}
                                     </div>
 
@@ -733,7 +878,7 @@ export default function ATSAnalyzer() {
                                     <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20 }}>
                                         <Shield size={18} color="#f87171"/>
                                         <div>
-                                            <div style={{ fontSize:18, fontWeight:900, color:"#fff" }}>Skill Gap Analysis</div>
+                                            <div style={{ fontSize:18, fontWeight:800, color:"#fff", fontFamily:"'Sora',sans-serif" }}>Skill Gap Analysis</div>
                                             <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>
                                                 {report.skillGaps?.length || 0} gaps identified · Prioritized by severity
                                             </div>
@@ -743,7 +888,7 @@ export default function ATSAnalyzer() {
                                     {(!report.skillGaps || report.skillGaps.length === 0) ? (
                                         <div className="ats-card" style={{ textAlign:"center", padding:40 }}>
                                             <CheckCircle2 size={32} color="#22c55e" style={{ marginBottom:12 }}/>
-                                            <div style={{ fontSize:16, fontWeight:700, color:"#fff", marginBottom:6 }}>No Critical Gaps Found</div>
+                                            <div style={{ fontSize:16, fontWeight:700, color:"#fff", marginBottom:6, fontFamily:"'Sora',sans-serif" }}>No Critical Gaps Found</div>
                                             <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>
                                                 Your resume covers the key requirements well!
                                             </div>
@@ -759,7 +904,7 @@ export default function ATSAnalyzer() {
                                                             <div style={{ fontSize:20, flexShrink:0, marginTop:2 }}>{sev.icon}</div>
                                                             <div style={{ flex:1 }}>
                                                                 <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6, flexWrap:"wrap" }}>
-                                                                    <span style={{ fontSize:15, fontWeight:800, color:"#fff" }}>{gap.skill}</span>
+                                                                    <span style={{ fontSize:15, fontWeight:700, color:"#fff", fontFamily:"'Sora',sans-serif" }}>{gap.skill}</span>
                                                                     <span style={{
                                                                         fontSize:10, padding:"2px 10px", borderRadius:20,
                                                                         background:`${sev.text}15`, border:`1px solid ${sev.text}40`, color:sev.text,
@@ -795,7 +940,7 @@ export default function ATSAnalyzer() {
                                     <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:24 }}>
                                         <GraduationCap size={18} color="#6366f1"/>
                                         <div>
-                                            <div style={{ fontSize:18, fontWeight:900, color:"#fff" }}>Personalized Learning Path</div>
+                                            <div style={{ fontSize:18, fontWeight:800, color:"#fff", fontFamily:"'Sora',sans-serif" }}>Personalized Learning Path</div>
                                             <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>
                                                 AI-generated recommendations to fill your skill gaps
                                             </div>
@@ -805,7 +950,7 @@ export default function ATSAnalyzer() {
                                     {(!report.learningPath || report.learningPath.length === 0) ? (
                                         <div className="ats-card" style={{ textAlign:"center", padding:40 }}>
                                             <Sparkles size={32} color="#6366f1" style={{ marginBottom:12 }}/>
-                                            <div style={{ fontSize:16, fontWeight:700, color:"#fff", marginBottom:6 }}>No Learning Path Generated</div>
+                                            <div style={{ fontSize:16, fontWeight:700, color:"#fff", marginBottom:6, fontFamily:"'Sora',sans-serif" }}>No Learning Path Generated</div>
                                             <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>
                                                 Your skills are well-aligned with this role!
                                             </div>
@@ -821,14 +966,14 @@ export default function ATSAnalyzer() {
                                                             width:36, height:36, borderRadius:10, flexShrink:0,
                                                             background:"rgba(99,102,241,0.1)", border:"1px solid rgba(99,102,241,0.3)",
                                                             display:"flex", alignItems:"center", justifyContent:"center",
-                                                            fontSize:14, fontWeight:900, color:"#818cf8", fontFamily:"'Syne',sans-serif",
+                                                            fontSize:14, fontWeight:800, color:"#818cf8", fontFamily:"'Sora',sans-serif",
                                                         }}>
                                                             {item.priority || (i + 1)}
                                                         </div>
 
                                                         <div style={{ flex:1 }}>
                                                             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6, flexWrap:"wrap" }}>
-                                                                <span style={{ fontSize:15, fontWeight:800, color:"#fff" }}>{item.skill}</span>
+                                                                <span style={{ fontSize:15, fontWeight:700, color:"#fff", fontFamily:"'Sora',sans-serif" }}>{item.skill}</span>
                                                                 {item.timeEstimate && (
                                                                     <span style={{
                                                                         display:"inline-flex", alignItems:"center", gap:4,
@@ -876,7 +1021,7 @@ export default function ATSAnalyzer() {
                                     <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:24 }}>
                                         <History size={18} color="#22c55e"/>
                                         <div>
-                                            <div style={{ fontSize:18, fontWeight:900, color:"#fff" }}>Analysis History</div>
+                                            <div style={{ fontSize:18, fontWeight:800, color:"#fff", fontFamily:"'Sora',sans-serif" }}>Analysis History</div>
                                             <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>
                                                 {history.length} past {history.length === 1 ? "analysis" : "analyses"}
                                             </div>
@@ -886,7 +1031,7 @@ export default function ATSAnalyzer() {
                                     {history.length === 0 ? (
                                         <div className="ats-card" style={{ textAlign:"center", padding:40 }}>
                                             <History size={32} color="rgba(255,255,255,0.2)" style={{ marginBottom:12 }}/>
-                                            <div style={{ fontSize:16, fontWeight:700, color:"#fff", marginBottom:6 }}>No History Yet</div>
+                                            <div style={{ fontSize:16, fontWeight:700, color:"#fff", marginBottom:6, fontFamily:"'Sora',sans-serif" }}>No History Yet</div>
                                             <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", fontFamily:"'JetBrains Mono',monospace" }}>
                                                 Run an analysis to start building your history
                                             </div>

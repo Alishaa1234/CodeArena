@@ -35,6 +35,7 @@ const interviewRouter = require('./src/routes/interview'); // ← Interview
 const atsRouter       = require('./src/routes/ats');       // ← ATS Analyzer
 const hintRouter    = require('./src/routes/hint');    // ← AI Hints
 const duelHandler   = require('./src/socket/duelHandler');
+const { startATSWorker } = require('./src/workers/atsWorker'); // ← BullMQ ATS Worker
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
@@ -166,6 +167,8 @@ const initializeConnection = async () => {
 
     try {
         await redisClient.connect();
+        // Start BullMQ ATS worker once Redis is confirmed up
+        startATSWorker();
     } catch (err) {
         console.warn('[Redis] Unavailable — logout token blocklisting disabled. App will still work.');
         console.warn('[Redis] To enable: install Redis (brew install redis && brew services start redis)');

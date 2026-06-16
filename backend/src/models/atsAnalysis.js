@@ -103,7 +103,7 @@ const atsAnalysisSchema = new Schema(
         // ── Learning Path ────────────────────────────────────────
         learningPath: [{
             skill:        { type: String },
-            priority:     { type: Number, min: 1, max: 5 },
+            priority:     { type: Number, min: 1 },
             timeEstimate: { type: String },     // e.g. "2 weeks"
             resources:    [{ type: String }],
             description:  { type: String },
