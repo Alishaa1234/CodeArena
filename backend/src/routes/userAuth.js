@@ -1,10 +1,11 @@
 const express = require('express');
 const authRouter = express.Router();
-const { register, login, logout, adminRegister, deleteProfile } = require('../controllers/userAuthent');
+const { register, login, logout, adminRegister, deleteProfile, googleLogin } = require('../controllers/userAuthent');
 const authMiddleware = require("../middleware/authMiddleware");
 
 authRouter.post('/register', register);
 authRouter.post('/login', login);
+authRouter.post('/google', googleLogin);
 authRouter.post('/logout', authMiddleware(), logout);
 authRouter.post('/admin/register', authMiddleware('admin'), adminRegister);
 authRouter.delete('/deleteProfile', authMiddleware(), deleteProfile);
@@ -13,9 +14,11 @@ authRouter.get('/check', authMiddleware(), (req, res) => {
     res.status(200).json({
         user: {
             firstName: req.result.firstName,
+            lastName:  req.result.lastName,
             emailId:   req.result.emailId,
             _id:       req.result._id,
             role:      req.result.role,
+            avatarUrl: req.result.avatarUrl,
         },
         message: "Valid user",
     });

@@ -5,11 +5,11 @@ import axiosClient from "../utils/axiosClient";
 import { logoutUser } from "../authSlice";
 import {
   Code2, LogOut, Settings, CheckCircle2, ChevronDown,
-  Swords, Search, ArrowUpDown, X, User, BrainCircuit, Target
+  Swords, Search, X, BrainCircuit, Target
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 
-export default function Homepage() {
+export default function PracticePage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((s) => s.auth);
@@ -96,6 +96,7 @@ export default function Homepage() {
         .hp-nav-right { display:flex; align-items:center; gap:8px; }
         .hp-nav-btn { background:none; border:1px solid ${cardBdr}; border-radius:8px; padding:6px 12px; color:${textSub}; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s; font-family:'Sora',sans-serif; font-weight:600; }
         .hp-nav-btn:hover { border-color:${textMut}; color:${text}; background:${tile}; }
+        .hp-nav-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-bg); }
         .hp-nav-btn.duel { color:#ef4444; border-color:rgba(239,68,68,0.4); background:rgba(239,68,68,0.06); }
         .hp-nav-btn.duel:hover { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.6); }
         .hp-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#a855f7); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; cursor:pointer; transition:opacity 0.2s; border:2px solid rgba(99,102,241,0.3); }
@@ -107,19 +108,12 @@ export default function Homepage() {
         .hp-welcome-name { font-size:28px; font-weight:800; letter-spacing:-0.6px; color:${text}; font-family:'Sora',sans-serif; }
         .hp-welcome-sub { font-size:13px; color:${textMut}; margin-top:6px; font-family:'JetBrains Mono',monospace; }
 
-        /* Duel banner */
-        .hp-duel { background:${card}; border:1px solid ${cardBdr}; border-radius:16px; padding:18px 22px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer; transition:all 0.2s; }
-        .hp-duel:hover { border-color:rgba(239,68,68,0.5); background:${isDark ? "rgba(239,68,68,0.06)" : "rgba(239,68,68,0.03)"}; transform:translateY(-1px); }
-        .hp-duel:hover .hp-duel-arrow { transform:translateX(4px); }
-        .hp-duel-icon { width:42px; height:42px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        .hp-duel-arrow { transition:transform 0.2s; }
-
         /* Stats */
-        .hp-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+        .hp-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:28px; }
         @media (max-width:640px) { .hp-stats { grid-template-columns:repeat(2,1fr); } }
         .hp-stat { background:${card}; border:1px solid ${cardBdr}; border-radius:14px; padding:18px 20px; }
         .hp-stat-lbl { font-size:10px; color:${textMut}; text-transform:uppercase; letter-spacing:1px; font-family:'JetBrains Mono',monospace; margin-bottom:8px; font-weight:600; }
-        .hp-stat-val { font-size:26px; font-weight:800; line-height:1; fontFamily:'Sora',sans-serif; }
+        .hp-stat-val { font-size:26px; font-weight:800; line-height:1; font-family:'Sora',sans-serif; }
         .hp-prog { height:5px; background:${tileBdr}; border-radius:3px; overflow:hidden; margin-top:10px; }
         .hp-prog-fill { height:100%; border-radius:3px; transition:width 0.8s ease; }
 
@@ -157,7 +151,7 @@ export default function Homepage() {
       {/* ── Navbar ── */}
       <nav className="hp-nav">
         <NavLink to="/" className="hp-logo">
-          <div className="hp-logo-icon"><Code2 size={18} color="#000"/></div>
+          <div className="hp-logo-icon"><Code2 size={18} color="#fff"/></div>
           <span className="hp-logo-text">CodeArena</span>
         </NavLink>
         <div className="hp-nav-right">
@@ -166,6 +160,9 @@ export default function Homepage() {
               <button className="hp-nav-btn"><Settings size={13}/>Admin</button>
             </NavLink>
           )}
+          <button className="hp-nav-btn active" onClick={() => navigate("/practice")}>
+            <Code2 size={13}/>Practice
+          </button>
           <button className="hp-nav-btn duel" onClick={() => navigate("/duel")}>
             <Swords size={13}/>Duel
           </button>
@@ -201,79 +198,8 @@ export default function Homepage() {
 
         {/* ── Welcome ── */}
         <div className="hp-welcome">
-          <div className="hp-welcome-name">Hey, {user?.firstName} 👋</div>
+          <div className="hp-welcome-name">Practice Problems</div>
           <div className="hp-welcome-sub">// {solvedIds.size} of {problems.length} problems solved</div>
-        </div>
-
-        {/* ── Duel banner ── */}
-        <div className="hp-duel" onClick={() => navigate("/duel")}>
-          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-            <div className="hp-duel-icon"><Swords size={20} color="#ef4444"/></div>
-            <div>
-              <p style={{ fontSize:15, fontWeight:800, color:text, margin:"0 0 3px" }}>1v1 Code Duel</p>
-              <p style={{ fontSize:12, color:textMut, margin:0, fontFamily:"'JetBrains Mono',monospace" }}>
-                Challenge a friend · First AC wins · ELO rated
-              </p>
-            </div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            {user?.eloRating && (
-              <span style={{ padding:"3px 12px", borderRadius:20, fontSize:12, fontWeight:700, fontFamily:"'JetBrains Mono',monospace", color:"#ef4444", background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.25)" }}>
-                {user.eloRating} ELO
-              </span>
-            )}
-            <ChevronDown size={16} className="hp-duel-arrow" style={{ transform:"rotate(-90deg)", color:textMut }}/>
-          </div>
-        </div>
-
-        {/* ── Interview banner ── */}
-        <div
-          onClick={() => navigate('/interview')}
-          style={{ background:isDark ? "#1a1a1a" : "#ffffff", border:`1px solid ${isDark ? "#2a2a2a" : "#e4e4e7"}`, borderRadius:16, padding:"18px 22px", marginBottom:24, display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, cursor:"pointer", transition:"all 0.2s" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(168,85,247,0.5)"; e.currentTarget.style.background=isDark?"rgba(168,85,247,0.06)":"rgba(168,85,247,0.03)"; e.currentTarget.style.transform="translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor=isDark?"#2a2a2a":"#e4e4e7"; e.currentTarget.style.background=isDark?"#1a1a1a":"#ffffff"; e.currentTarget.style.transform="translateY(0)"; }}
-        >
-          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-            <div style={{ width:42, height:42, background:"rgba(168,85,247,0.1)", border:"1px solid rgba(168,85,247,0.25)", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-              <BrainCircuit size={20} color="#a855f7"/>
-            </div>
-            <div>
-              <p style={{ fontSize:15, fontWeight:800, color:text, margin:"0 0 3px" }}>AI Mock Interview</p>
-              <p style={{ fontSize:12, color:textMut, margin:0, fontFamily:"'JetBrains Mono',monospace" }}>
-                Upload resume · AI interviewer · Get scored feedback
-              </p>
-            </div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ padding:"3px 12px", borderRadius:20, fontSize:12, fontWeight:700, fontFamily:"'JetBrains Mono',monospace", color:"#a855f7", background:"rgba(168,85,247,0.1)", border:"1px solid rgba(168,85,247,0.25)" }}>
-              New
-            </span>
-            <ChevronDown size={16} style={{ transform:"rotate(-90deg)", color:textMut }}/>
-          </div>
-        </div>
-
-        {/* ATS banner */}
-        <div
-          onClick={() => navigate("/ats")}
-          style={{ background:isDark ? "#1a1a1a" : "#ffffff", border:"1px solid " + (isDark ? "#2a2a2a" : "#e4e4e7"), borderRadius:16, padding:"18px 22px", marginBottom:24, display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, cursor:"pointer", transition:"all 0.2s" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(34,197,94,0.5)"; e.currentTarget.style.transform="translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor=isDark?"#2a2a2a":"#e4e4e7"; e.currentTarget.style.transform="translateY(0)"; }}
-        >
-          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-            <div style={{ width:42, height:42, background:"rgba(34,197,94,0.1)", border:"1px solid rgba(34,197,94,0.25)", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-              <Target size={20} color="#22c55e"/>
-            </div>
-            <div>
-              <p style={{ fontSize:15, fontWeight:800, color:text, margin:"0 0 3px" }}>ATS Resume Analyzer</p>
-              <p style={{ fontSize:12, color:textMut, margin:0, fontFamily:"'JetBrains Mono',monospace" }}>
-                Keyword matching · Section scoring · AI rewrites · Industry benchmarks
-              </p>
-            </div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ padding:"3px 12px", borderRadius:20, fontSize:12, fontWeight:700, fontFamily:"'JetBrains Mono',monospace", color:"#22c55e", background:"rgba(34,197,94,0.1)", border:"1px solid rgba(34,197,94,0.25)" }}>Level 2+3</span>
-            <ChevronDown size={16} style={{ transform:"rotate(-90deg)", color:textMut }}/>
-          </div>
         </div>
 
         {/* Stats */}

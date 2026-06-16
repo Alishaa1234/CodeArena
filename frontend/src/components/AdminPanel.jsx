@@ -88,7 +88,7 @@ export default function AdminPanel() {
   };
 
   const addBtn = (onClick, label) => (
-    <button type="button" onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "rgba(255,161,22,0.08)", border: "1px solid rgba(255,161,22,0.2)", borderRadius: 7, color: "#ffa116", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Syne',sans-serif" }}>
+    <button type="button" onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "var(--accent-bg)", border: "1px solid var(--accent-border)", borderRadius: 7, color: "var(--accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter',sans-serif" }}>
       <Plus size={12} />{label}
     </button>
   );
@@ -152,7 +152,7 @@ export default function AdminPanel() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {TAGS.map((t) => (
                 <label key={t} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                  <input type="checkbox" value={t} {...register("tags")} style={{ accentColor: "#ffa116" }} />
+                  <input type="checkbox" value={t} {...register("tags")} style={{ accentColor: "var(--accent)" }} />
                   <span style={{ fontSize: 12, color: "#888", fontFamily: "'JetBrains Mono',monospace" }}>{t}</span>
                 </label>
               ))}
@@ -256,7 +256,7 @@ export default function AdminPanel() {
           <div style={sectionTitle}>Code Templates & Reference Solutions</div>
           {LANGS.map((lang, i) => (
             <div key={lang.value} style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#ffa116", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12, padding: "4px 10px", background: "rgba(255,161,22,0.08)", borderRadius: 6, display: "inline-block" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12, padding: "4px 10px", background: "var(--accent-bg)", borderRadius: 6, display: "inline-block" }}>
                 {lang.label}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -273,7 +273,7 @@ export default function AdminPanel() {
           ))}
         </div>
 
-        <button type="submit" disabled={submitting} style={{ width: "100%", background: submitting ? "var(--bg-secondary)" : "#ffa116", color: submitting ? "var(--text-muted)" : "#000", border: "none", borderRadius: 10, padding: 14, fontSize: 15, fontWeight: 800, cursor: submitting ? "not-allowed" : "pointer", fontFamily: "'Syne',sans-serif" }}>
+        <button type="submit" disabled={submitting} style={{ width: "100%", background: submitting ? "var(--bg-secondary)" : "var(--accent)", color: submitting ? "var(--text-muted)" : "#fff", border: "none", borderRadius: 10, padding: 14, fontSize: 15, fontWeight: 800, cursor: submitting ? "not-allowed" : "pointer", fontFamily: "'Inter',sans-serif" }}>
           {submitting ? "Creating Problem..." : "Create Problem"}
         </button>
       </form>

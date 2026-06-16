@@ -3,6 +3,9 @@ const User = require("../models/user");
 const validate = require('../utils/validator');
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const COOKIE_OPTIONS = {
     httpOnly: true,
@@ -19,9 +22,11 @@ const CLEAR_COOKIE_OPTIONS = {
 
 const buildUserReply = (user) => ({
     firstName: user.firstName,
+    lastName: user.lastName,
     emailId: user.emailId,
     _id: user._id,
     role: user.role,
+    avatarUrl: user.avatarUrl,
 });
 
 const register = async (req, res, next) => {
@@ -124,4 +129,78 @@ const deleteProfile = async (req, res, next) => {
     }
 };
 
-module.exports = { register, login, logout, adminRegister, deleteProfile };
+const googleLogin = async (req, res, next) => {
+    try {
+        const { credential } = req.body;
+        if (!credential) {
+            return res.status(400).json({ message: "Google credential token is required" });
+        }
+
+        const ticket = await client.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        const { sub: googleId, email: emailId, given_name: firstName, family_name: lastName, picture: avatarUrl } = payload;
+
+        // Process names to satisfy schema validation constraints (firstName and lastName require minLength: 3 if present)
+        let fName = firstName || "Google User";
+        let lName = lastName || "";
+
+        if (fName.trim().length < 3) {
+            fName = fName.trim().padEnd(3, "_");
+        }
+        if (lName && lName.trim().length < 3) {
+            if ((fName + " " + lName).length <= 20) {
+                fName = fName + " " + lName;
+            }
+            lName = "";
+        }
+
+        // Account linking: Check if user exists
+        let user = await User.findOne({ googleId });
+
+        if (!user) {
+            // Check if user exists with matching email
+            user = await User.findOne({ emailId });
+            if (user) {
+                // Link Google account to existing user
+                user.googleId = googleId;
+                if (!user.avatarUrl && avatarUrl) {
+                    user.avatarUrl = avatarUrl;
+                }
+                await user.save();
+            } else {
+                // Create a new user
+                user = await User.create({
+                    firstName: fName,
+                    lastName: lName || undefined,
+                    emailId,
+                    googleId,
+                    avatarUrl,
+                    role: 'user'
+                });
+            }
+        } else {
+            // Update avatar URL if it changed/updated
+            if (avatarUrl && user.avatarUrl !== avatarUrl) {
+                user.avatarUrl = avatarUrl;
+                await user.save();
+            }
+        }
+
+        const token = jwt.sign(
+            { _id: user._id, emailId: user.emailId, role: user.role },
+            process.env.JWT_KEY,
+            { expiresIn: '1h' }
+        );
+
+        res.cookie('token', token, COOKIE_OPTIONS);
+        res.status(200).json({ user: buildUserReply(user), message: "Logged in with Google successfully" });
+    } catch (err) {
+        next(err);
+    }
+};
+
+module.exports = { register, login, logout, adminRegister, deleteProfile, googleLogin };

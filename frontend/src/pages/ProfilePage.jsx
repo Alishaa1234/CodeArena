@@ -22,6 +22,7 @@ function Heatmap({ data, isDark }) {
     const toKey = (d) =>
         `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
+    // Generate rolling 365 days
     const days = [];
     for (let i = 364; i >= 0; i--) {
         const d = new Date(today);
@@ -29,6 +30,7 @@ function Heatmap({ data, isDark }) {
         days.push({ date: toKey(d), count: data[toKey(d)] || 0 });
     }
 
+    // Split rolling year days into continuous weeks (columns)
     const weeks = [];
     let week = [];
     const startDay = new Date(days[0].date + 'T12:00:00').getDay();
@@ -39,25 +41,7 @@ function Heatmap({ data, isDark }) {
     });
     if (week.length) { while (week.length < 7) week.push(null); weeks.push(week); }
 
-    // Track which week index each month starts at (for spacing)
-    const monthStartWeeks = new Set();
-    let lastM = -1;
-    weeks.forEach((wk, wi) => {
-        const first = wk.find(d => d !== null);
-        if (!first) return;
-        const m = new Date(first.date + 'T12:00:00').getMonth();
-        if (m !== lastM) { monthStartWeeks.add(wi); lastM = m; }
-    });
-
-    const emptyColor = isDark ? "#2d2d2d" : "#ebedf0";
-    const getColor = (count) => {
-        if (!count) return emptyColor;
-        if (count === 1) return isDark ? "#0e4429" : "#9be9a8";
-        if (count === 2) return isDark ? "#006d32" : "#40c463";
-        if (count === 3) return isDark ? "#26a641" : "#30a14e";
-        return isDark ? "#39d353" : "#216e39";
-    };
-
+    // Map month label positions (first week index of each month change)
     const monthLabels = [];
     let lastMonth = -1;
     weeks.forEach((wk, wi) => {
@@ -70,6 +54,15 @@ function Heatmap({ data, isDark }) {
         }
     });
 
+    const emptyColor = isDark ? "#2d2d2d" : "#ebedf0";
+    const getColor = (count) => {
+        if (!count) return emptyColor;
+        if (count === 1) return isDark ? "#0e4429" : "#9be9a8";
+        if (count === 2) return isDark ? "#006d32" : "#40c463";
+        if (count === 3) return isDark ? "#26a641" : "#30a14e";
+        return isDark ? "#39d353" : "#216e39";
+    };
+
     const activeDays = Object.values(data).filter(v => v > 0).length;
     const total = Object.values(data).reduce((a, b) => a + b, 0);
 
@@ -81,31 +74,48 @@ function Heatmap({ data, isDark }) {
                     {total} submissions · {activeDays} active days
                 </span>
             </div>
-            {/* Month labels */}
-            <div style={{ display:"flex", gap:2, marginBottom:3 }}>
-                {weeks.map((_, wi) => {
-                    const lbl = monthLabels.find(m => m.wi === wi);
-                    return <div key={wi} style={{ width:11, flexShrink:0, fontSize:9, color:"var(--text-muted)", fontFamily:"'JetBrains Mono',monospace", overflow:"visible", whiteSpace:"nowrap" }}>{lbl?.label || ""}</div>;
-                })}
-            </div>
-            {/* Grid */}
+
+            {/* Grid wrapper with scrolling */}
             <div style={{ overflowX:"auto" }}>
-                <div style={{ display:"flex", gap:2, minWidth:"fit-content" }}>
-                    {weeks.map((wk, wi) => (
-                        <div key={wi} style={{ display:"flex", flexDirection:"column", gap:2, marginLeft: wi > 0 && monthStartWeeks.has(wi) ? 6 : 0 }}>
-                            {wk.map((day, di) => (
-                                <div key={di}
-                                    title={day ? `${day.date}: ${day.count} submission${day.count !== 1 ? "s" : ""}` : ""}
-                                    style={{
-                                        width:11, height:11, borderRadius:2, flexShrink:0,
-                                        background: day ? getColor(day.count) : "transparent",
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    ))}
+                <div style={{ minWidth:"fit-content" }}>
+                    {/* Month labels */}
+                    <div style={{ display:"flex", gap:2, marginBottom:3 }}>
+                        {weeks.map((_, wi) => {
+                            const lbl = monthLabels.find(m => m.wi === wi);
+                            return (
+                                <div key={wi} style={{
+                                    width: 11,
+                                    flexShrink: 0,
+                                    fontSize: 9,
+                                    color: "var(--text-muted)",
+                                    fontFamily: "'JetBrains Mono',monospace",
+                                    overflow: "visible",
+                                    whiteSpace: "nowrap"
+                                }}>
+                                    {lbl?.label || ""}
+                                </div>
+                            );
+                        })}
+                    </div>
+                    {/* Continuous grid layout */}
+                    <div style={{ display:"flex", gap:2 }}>
+                        {weeks.map((wk, wi) => (
+                            <div key={wi} style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                                {wk.map((day, di) => (
+                                    <div key={di}
+                                        title={day ? `${day.date}: ${day.count} submission${day.count !== 1 ? "s" : ""}` : ""}
+                                        style={{
+                                            width:11, height:11, borderRadius:2, flexShrink:0,
+                                            background: day ? getColor(day.count) : "transparent",
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
+
             {/* Legend */}
             <div style={{ display:"flex", alignItems:"center", gap:3, marginTop:8, justifyContent:"flex-end" }}>
                 <span style={{ fontSize:10, color:"var(--text-muted)", fontFamily:"'JetBrains Mono',monospace", marginRight:2 }}>Less</span>
@@ -125,7 +135,7 @@ function Donut({ easy=0, medium=0, hard=0 }) {
     const circ = 2 * Math.PI * r;
     const segs = [
         { v:easy,   c:"#00b8a3", label:"Easy"   },
-        { v:medium, c:"#ffa116", label:"Medium" },
+        { v:medium, c:"var(--accent)", label:"Medium" },
         { v:hard,   c:"#ff375f", label:"Hard"   },
     ];
     let off = 0;
@@ -148,7 +158,7 @@ function Donut({ easy=0, medium=0, hard=0 }) {
                     />
                 ))}
                 <text x={cx} y={cy-7} textAnchor="middle"
-                    style={{ fill:"var(--text-primary)", fontSize:20, fontWeight:900, fontFamily:"'Syne',sans-serif" }}
+                    style={{ fill:"var(--text-primary)", fontSize:20, fontWeight:900, fontFamily:"'Sora',sans-serif" }}
                     transform={`rotate(90,${cx},${cy})`}>{total}</text>
                 <text x={cx} y={cy+10} textAnchor="middle"
                     style={{ fill:"var(--text-muted)", fontSize:10, fontFamily:"'JetBrains Mono',monospace" }}
@@ -230,14 +240,14 @@ export default function ProfilePage() {
     };
 
     return (
-        <div style={{ minHeight:"100vh", background:pageBg, fontFamily:"'Syne',sans-serif" }}>
+        <div style={{ minHeight:"100vh", background:pageBg, fontFamily:"'Inter',sans-serif" }}>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800;900&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;500;600;700;800&display=swap');
                 *, *::before, *::after { box-sizing:border-box; }
                 .pf-nav { position:sticky; top:0; z-index:50; height:56px; background:${isDark ? "rgba(17,17,17,0.92)" : "rgba(255,255,255,0.92)"}; backdrop-filter:blur(16px); border-bottom:1px solid ${cardBdr}; display:flex; align-items:center; padding:0 20px; gap:12px; }
                 .pf-back { color:${textMut}; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-size:12px; font-family:'JetBrains Mono',monospace; padding:6px 10px; border-radius:8px; border:1px solid ${cardBdr}; transition:all 0.2s; background:none; }
                 .pf-back:hover { color:${text}; border-color:${textMut}; background:${tile}; }
-                .pf-nav-btn { background:none; border:1px solid ${cardBdr}; border-radius:8px; padding:6px 12px; color:${textMut}; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:6px; transition:all 0.2s; font-family:'Syne',sans-serif; }
+                .pf-nav-btn { background:none; border:1px solid ${cardBdr}; border-radius:8px; padding:6px 12px; color:${textMut}; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:6px; transition:all 0.2s; font-family:'Inter',sans-serif; }
                 .pf-nav-btn:hover { border-color:${textMut}; color:${text}; background:${tile}; }
                 .pf-body { max-width:1080px; margin:0 auto; padding:28px 20px; display:grid; grid-template-columns:270px 1fr; gap:16px; }
                 @media (max-width:860px) { .pf-body { grid-template-columns:1fr; } }
@@ -247,19 +257,19 @@ export default function ProfilePage() {
                 .pf-sub { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid ${cardBdr}; }
                 .pf-sub:last-child { border-bottom:none; }
                 .pf-sub-link { font-size:13px; font-weight:700; color:${text}; text-decoration:none; transition:color 0.15s; }
-                .pf-sub-link:hover { color:#ffa116; }
+                .pf-sub-link:hover { color:var(--accent); }
                 .pf-loading { display:flex; align-items:center; justify-content:center; height:60vh; color:${textMut}; font-family:'JetBrains Mono',monospace; font-size:13px; }
             `}</style>
 
             {/* Navbar */}
             <nav className="pf-nav">
                 <NavLink to="/" className="pf-back"><ChevronLeft size={13}/>Back</NavLink>
-                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    <div style={{ width:28, height:28, background:"#ffa116", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        <Code2 size={15} color="#000"/>
+                <NavLink to="/" style={{ display:"flex", alignItems:"center", gap:8, textDecoration:"none" }}>
+                    <div style={{ width:28, height:28, background:"var(--accent)", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        <Code2 size={15} color="#fff"/>
                     </div>
-                    <span style={{ fontSize:15, fontWeight:800, color:text }}>LeetCode</span>
-                </div>
+                    <span style={{ fontSize:15, fontWeight:800, color:text }}>CodeArena</span>
+                </NavLink>
                 <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8 }}>
                     {authUser?.role === "admin" && (
                         <NavLink to="/admin">
@@ -285,20 +295,30 @@ export default function ProfilePage() {
 
                         {/* Profile card */}
                         <div style={card_style}>
-                            <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:16 }}>
-                                <div style={{ width:64, height:64, borderRadius:"50%", background:"linear-gradient(135deg,#ffa116,#ff5722)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, fontWeight:900, color:"#fff", flexShrink:0 }}>
-                                    {profile.user.firstName?.[0]?.toUpperCase()}
-                                </div>
-                                <div>
-                                    <div style={{ fontSize:17, fontWeight:900, color:text, letterSpacing:"-0.3px", lineHeight:1.2 }}>
+                            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:12, marginBottom:16 }}>
+                                {profile.user.avatarUrl ? (
+                                    <img
+                                        src={profile.user.avatarUrl}
+                                        alt="Avatar"
+                                        style={{ width:72, height:72, borderRadius:"50%", objectFit:"cover", flexShrink:0, border:`1px solid ${cardBdr}` }}
+                                    />
+                                ) : (
+                                    <div style={{ width:72, height:72, borderRadius:"50%", background:"linear-gradient(135deg,var(--accent),#a855f7)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, fontWeight:900, color:"#fff", flexShrink:0 }}>
+                                        {profile.user.firstName?.[0]?.toUpperCase()}
+                                    </div>
+                                )}
+                                <div style={{ width: "100%", minWidth: 0 }}>
+                                    <div style={{ fontSize:18, fontWeight:900, color:text, letterSpacing:"-0.3px", lineHeight:1.2 }}>
                                         {profile.user.firstName} {profile.user.lastName || ""}
                                     </div>
-                                    <div style={{ fontSize:12, color:textMut, fontFamily:"'JetBrains Mono',monospace", marginTop:3 }}>
+                                    <div title={profile.user.emailId} style={{ fontSize:12, color:textMut, fontFamily:"'JetBrains Mono',monospace", marginTop:5, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                                         {profile.user.emailId}
                                     </div>
-                                    <span style={{ marginTop:6, display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:700, fontFamily:"'JetBrains Mono',monospace", background:"rgba(255,161,22,0.15)", border:"1px solid rgba(255,161,22,0.4)", color:"#ffa116" }}>
-                                        {profile.user.role}
-                                    </span>
+                                    <div style={{ marginTop:8 }}>
+                                        <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:700, fontFamily:"'JetBrains Mono',monospace", background:"var(--accent-bg)", border:"1px solid var(--accent-border)", color:"var(--accent)" }}>
+                                            {profile.user.role}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -320,12 +340,12 @@ export default function ProfilePage() {
                             <div className="pf-label">Streaks</div>
                             <div style={{ display:"flex", gap:10 }}>
                                 {[
-                                    { icon:<Flame size={18} color="#ffa116"/>, num:profile.streaks?.current ?? 0, label:"Current" },
-                                    { icon:<Trophy size={18} color="#ffa116"/>, num:profile.streaks?.max ?? 0, label:"Best" },
+                                    { icon:<Flame size={18} color="var(--accent)"/>, num:profile.streaks?.current ?? 0, label:"Current" },
+                                    { icon:<Trophy size={18} color="var(--accent)"/>, num:profile.streaks?.max ?? 0, label:"Best" },
                                 ].map(({ icon, num, label }) => (
                                     <div key={label} className="pf-tile" style={{ flex:1, textAlign:"center" }}>
                                         <div style={{ marginBottom:6 }}>{icon}</div>
-                                        <div style={{ fontSize:26, fontWeight:900, color:"#ffa116", fontFamily:"'Syne',sans-serif", lineHeight:1 }}>{num}</div>
+                                        <div style={{ fontSize:26, fontWeight:900, color:"var(--accent)", fontFamily:"'Sora',sans-serif", lineHeight:1 }}>{num}</div>
                                         <div style={{ fontSize:10, color:textMut, fontFamily:"'JetBrains Mono',monospace", marginTop:5, textTransform:"uppercase", letterSpacing:"0.5px" }}>{label}</div>
                                     </div>
                                 ))}
@@ -343,7 +363,7 @@ export default function ProfilePage() {
                                         ].map(({ icon, num, label, color }) => (
                                             <div key={label} className="pf-tile" style={{ flex:1, textAlign:"center" }}>
                                                 <div style={{ fontSize:18, marginBottom:6 }}>{icon}</div>
-                                                <div style={{ fontSize:26, fontWeight:900, color, fontFamily:"'Syne',sans-serif", lineHeight:1 }}>{num}</div>
+                                                <div style={{ fontSize:26, fontWeight:900, color, fontFamily:"'Sora',sans-serif", lineHeight:1 }}>{num}</div>
                                                 <div style={{ fontSize:10, color:textMut, fontFamily:"'JetBrains Mono',monospace", marginTop:5, textTransform:"uppercase", letterSpacing:"0.5px" }}>{label}</div>
                                             </div>
                                         ))}
@@ -356,16 +376,16 @@ export default function ProfilePage() {
                                 <>
                                     <div className="pf-hr"/>
                                     <div className="pf-label">Duel rating</div>
-                                    <div style={{ background:isDark ? "rgba(255,161,22,0.08)" : "rgba(255,161,22,0.06)", border:"1px solid rgba(255,161,22,0.25)", borderRadius:12, padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                                    <div style={{ background:"var(--accent-bg)", border:"1px solid var(--accent-border)", borderRadius:12, padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                                         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                                            <Swords size={18} color="#ffa116"/>
+                                            <Swords size={18} color="var(--accent)"/>
                                             <div>
-                                                <div style={{ fontSize:22, fontWeight:900, color:"#ffa116", fontFamily:"'Syne',sans-serif", lineHeight:1 }}>{profile.user.eloRating}</div>
+                                                <div style={{ fontSize:22, fontWeight:900, color:"var(--accent)", fontFamily:"'Sora',sans-serif", lineHeight:1 }}>{profile.user.eloRating}</div>
                                                 <div style={{ fontSize:10, color:textMut, fontFamily:"'JetBrains Mono',monospace", marginTop:2 }}>ELO rating</div>
                                             </div>
                                         </div>
                                         <div style={{ textAlign:"right" }}>
-                                            <div style={{ fontSize:18, fontWeight:700, color:text, fontFamily:"'Syne',sans-serif" }}>{profile.user.duelsPlayed ?? 0}</div>
+                                            <div style={{ fontSize:18, fontWeight:700, color:text, fontFamily:"'Sora',sans-serif" }}>{profile.user.duelsPlayed ?? 0}</div>
                                             <div style={{ fontSize:10, color:textMut, fontFamily:"'JetBrains Mono',monospace" }}>duels played</div>
                                         </div>
                                     </div>
@@ -392,12 +412,12 @@ export default function ProfilePage() {
                             <div className="pf-label">Overview</div>
                             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:22 }}>
                                 {[
-                                    { num: profile.stats?.total ?? 0,         label:"Solved",      color:"#ffa116" },
+                                    { num: profile.stats?.total ?? 0,         label:"Solved",      color:"var(--accent)" },
                                     { num: profile.acceptedSubmissions ?? 0,  label:"Accepted",    color:"#22c55e" },
                                     { num: profile.totalSubmissions ?? 0,     label:"Submissions", color: textSub  },
                                 ].map(({ num, label, color }) => (
                                     <div key={label} className="pf-tile" style={{ textAlign:"center" }}>
-                                        <div style={{ fontSize:26, fontWeight:900, color, fontFamily:"'Syne',sans-serif", lineHeight:1 }}>{num}</div>
+                                        <div style={{ fontSize:26, fontWeight:900, color, fontFamily:"'Sora',sans-serif", lineHeight:1 }}>{num}</div>
                                         <div style={{ fontSize:10, color:textMut, fontFamily:"'JetBrains Mono',monospace", marginTop:6, textTransform:"uppercase", letterSpacing:"0.5px" }}>{label}</div>
                                     </div>
                                 ))}

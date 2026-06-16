@@ -48,7 +48,7 @@ function ExampleCard({ example, index, paramNames, isDark }) {
   const border = isDark ? "#3a3a3a" : "#e5e7eb";
   const muted  = isDark ? "#8d8d8d" : "#888";
   const ink    = isDark ? "#eff1f6" : "#111";
-  const accent = "#ffa116";
+  const accent = "var(--accent)";
   const green  = "#00b8a3";
 
   return (
@@ -92,9 +92,9 @@ function ExampleCard({ example, index, paramNames, isDark }) {
       </div>
 
       {example.explanation && (
-        <div style={{ padding: "10px 16px", background: isDark ? "rgba(255,161,22,0.04)" : "rgba(255,161,22,0.03)", borderTop: `1px solid ${border}` }}>
+        <div style={{ padding: "10px 16px", background: "var(--accent-bg)", borderTop: `1px solid ${border}` }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 5 }}>Explanation</div>
-          <div style={{ fontSize: 13, color: isDark ? "#c9ccd3" : "#555", lineHeight: 1.7, fontFamily: "'Syne',sans-serif" }}>
+          <div style={{ fontSize: 13, color: isDark ? "#c9ccd3" : "#555", lineHeight: 1.7, fontFamily: "'Inter',sans-serif" }}>
             {example.explanation}
           </div>
         </div>
@@ -115,7 +115,7 @@ function RunCaseCard({ tc, index, paramNames, isDark }) {
   const border = isDark ? "#3a3a3a" : "#e5e7eb";
   const muted  = isDark ? "#8d8d8d" : "#888";
   const ink    = isDark ? "#eff1f6" : "#111";
-  const accent = "#ffa116";
+  const accent = "var(--accent)";
   const green  = "#00b8a3";
   const red    = "#ff375f";
 
@@ -239,8 +239,8 @@ export default function ProblemPage() {
   };
 
   if (pageLoading) return (
-    <div style={{ minHeight: "100vh", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ color: "#ffa116", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>Loading...</div>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ color: "var(--accent)", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>Loading...</div>
     </div>
   );
 
@@ -251,9 +251,9 @@ export default function ProblemPage() {
   const CONSOLE_HEIGHT = 280;
 
   return (
-    <div style={{ height: "100vh", overflow: "hidden", fontFamily: "'Syne', sans-serif", background: isDark ? "#1a1a1a" : "#ffffff", color: isDark ? "#eff1f6" : "#1a1a1a", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "100vh", overflow: "hidden", fontFamily: "'Inter', sans-serif", background: "var(--bg-primary)", color: "var(--text-primary)", display: "flex", flexDirection: "column" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -269,37 +269,37 @@ export default function ProblemPage() {
         .lc-tabs::-webkit-scrollbar { display:none; }
         .lc-tab { height:40px; padding:0 14px; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:${isDark?"#8d8d8d":"#6b7280"}; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; white-space:nowrap; transition:all 0.15s; }
         .lc-tab:hover { color:${isDark?"#eff1f6":"#111"}; }
-        .lc-tab.active { color:#ffa116; border-bottom-color:#ffa116; }
+        .lc-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
         .lc-left-body { flex:1; overflow-y:auto; padding:20px 24px; min-height:0; }
         .lc-problem-title { font-size:19px; font-weight:800; margin-bottom:12px; line-height:1.3; }
         .lc-meta-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
         .lc-tag { display:inline-flex; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; font-family:'JetBrains Mono',monospace; background:${isDark?"#3a3a3a":"#f0f0f0"}; color:${isDark?"#a8a8a8":"#555"}; }
-        .lc-pts-badge { display:inline-flex; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; background:rgba(255,161,22,0.12); color:#ffa116; }
+        .lc-pts-badge { display:inline-flex; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; background:var(--accent-bg); color:var(--accent); }
         .lc-desc { font-size:14px; line-height:1.8; color:${isDark?"#c9ccd3":"#3d3d3d"}; white-space:pre-wrap; }
         .lc-section-title { font-size:12px; font-weight:800; color:${isDark?"#8d8d8d":"#888"}; text-transform:uppercase; letter-spacing:0.1em; font-family:'JetBrains Mono',monospace; margin:20px 0 10px; }
         .lc-right { flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; background:${isDark?"#1e1e1e":"#fafafa"}; }
         .lc-langbar { height:40px; display:flex; align-items:center; gap:6px; padding:0 12px; background:${isDark?"#282828":"#f7f8fa"}; border-bottom:1px solid ${isDark?"#3a3a3a":"#e5e7eb"}; flex-shrink:0; }
         .lc-lang-btn { padding:4px 12px; border-radius:6px; font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; background:none; border:1px solid ${isDark?"#3a3a3a":"#e5e7eb"}; color:${isDark?"#8d8d8d":"#6b7280"}; cursor:pointer; transition:all 0.15s; }
-        .lc-lang-btn:hover { border-color:#ffa116; color:#ffa116; }
-        .lc-lang-btn.active { border-color:#ffa116; color:#ffa116; background:rgba(255,161,22,0.1); }
+        .lc-lang-btn:hover { border-color:var(--accent); color:var(--accent); }
+        .lc-lang-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-bg); }
         .lc-console { border-top:1px solid ${isDark?"#3a3a3a":"#e5e7eb"}; background:${isDark?"#1a1a1a":"#ffffff"}; display:flex; flex-direction:column; flex-shrink:0; }
         .lc-console-tabs { height:36px; display:flex; align-items:center; padding:0 8px; border-bottom:1px solid ${isDark?"#3a3a3a":"#e5e7eb"}; flex-shrink:0; }
         .lc-console-tab { height:36px; padding:0 12px; display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:${isDark?"#8d8d8d":"#6b7280"}; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; white-space:nowrap; transition:all 0.15s; }
-        .lc-console-tab.active { color:#ffa116; border-bottom-color:#ffa116; }
+        .lc-console-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
         .lc-console-body { flex:1; overflow-y:auto; padding:12px 16px; min-height:0; }
         .lc-console-spacer { flex:1; }
         .lc-console-close { background:none; border:none; color:${isDark?"#8d8d8d":"#999"}; cursor:pointer; height:36px; width:32px; display:flex; align-items:center; justify-content:center; border-radius:6px; font-size:16px; transition:all 0.15s; }
         .lc-console-close:hover { color:${isDark?"#fff":"#111"}; background:${isDark?"#3a3a3a":"#e5e7eb"}; }
         .lc-actionbar { height:44px; background:${isDark?"#282828":"#f7f8fa"}; border-top:1px solid ${isDark?"#3a3a3a":"#e5e7eb"}; display:flex; align-items:center; justify-content:space-between; padding:0 14px; flex-shrink:0; }
-        .lc-btn { display:inline-flex; align-items:center; gap:7px; padding:7px 16px; border-radius:8px; font-size:13px; font-weight:700; font-family:'Syne',sans-serif; cursor:pointer; transition:all 0.15s; border:1px solid ${isDark?"#3a3a3a":"#e5e7eb"}; background:none; color:${isDark?"#c9ccd3":"#444"}; }
+        .lc-btn { display:inline-flex; align-items:center; gap:7px; padding:7px 16px; border-radius:8px; font-size:13px; font-weight:700; font-family:'Inter',sans-serif; cursor:pointer; transition:all 0.15s; border:1px solid ${isDark?"#3a3a3a":"#e5e7eb"}; background:none; color:${isDark?"#c9ccd3":"#444"}; }
         .lc-btn:hover:not(:disabled) { border-color:${isDark?"#555":"#bbb"}; color:${isDark?"#fff":"#111"}; }
         .lc-btn:disabled { opacity:0.4; cursor:not-allowed; }
-        .lc-btn-submit { background:#ffa116; border-color:#ffa116; color:#000; }
-        .lc-btn-submit:hover:not(:disabled) { background:#ffb84d; border-color:#ffb84d; }
+        .lc-btn-submit { background:var(--accent); border-color:var(--accent); color:#fff; }
+        .lc-btn-submit:hover:not(:disabled) { background:var(--accent-hover); border-color:var(--accent-hover); color:#fff; }
         .lc-btn-accepted { background:#00b8a3; border-color:#00b8a3; color:#000; }
         .lc-console-toggle { display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:8px; font-size:13px; font-weight:700; border:1px solid ${isDark?"#3a3a3a":"#e5e7eb"}; background:none; cursor:pointer; color:${isDark?"#8d8d8d":"#6b7280"}; transition:all 0.15s; }
         .lc-console-toggle:hover { color:${isDark?"#fff":"#111"}; border-color:${isDark?"#555":"#bbb"}; }
-        .lc-spinner { width:14px; height:14px; border:2px solid rgba(255,161,22,0.2); border-top-color:#ffa116; border-radius:50%; animation:lc-spin 0.7s linear infinite; flex-shrink:0; }
+        .lc-spinner { width:14px; height:14px; border:2px solid var(--accent-border); border-top-color:var(--accent); border-radius:50%; animation:lc-spin 0.7s linear infinite; flex-shrink:0; }
         @keyframes lc-spin { to { transform:rotate(360deg); } }
         .lc-status-accept { color:#00b8a3; font-weight:800; font-size:16px; }
         .lc-status-reject { color:#ff375f; font-weight:800; font-size:16px; }
@@ -308,21 +308,21 @@ export default function ProblemPage() {
         .lc-kv-k { font-size:11px; color:${isDark?"#8d8d8d":"#888"}; text-transform:uppercase; letter-spacing:0.08em; font-weight:700; }
         .lc-kv-v { font-size:14px; font-weight:800; margin-top:4px; color:${isDark?"#eff1f6":"#111"}; }
         .lc-review-body { font-size:13px; color:${isDark?"#c9ccd3":"#444"}; line-height:1.8; white-space:pre-wrap; font-family:'JetBrains Mono',monospace; }
-        .lc-review-meta { font-size:11px; color:#ffa116; font-family:'JetBrains Mono',monospace; margin-bottom:10px; font-weight:700; }
+        .lc-review-meta { font-size:11px; color:var(--accent); font-family:'JetBrains Mono',monospace; margin-bottom:10px; font-weight:700; }
         .lc-review-fix-title { font-size:11px; font-weight:800; color:${isDark?"#8d8d8d":"#888"}; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.08em; margin:14px 0 6px; }
         .lc-review-code { background:${isDark?"#282828":"#f7f8fa"}; border:1px solid ${isDark?"#3a3a3a":"#e5e7eb"}; border-radius:8px; padding:12px; font-size:12px; font-family:'JetBrains Mono',monospace; color:${isDark?"#c9ccd3":"#333"}; overflow-x:auto; white-space:pre-wrap; }
         .lc-empty { color:${isDark?"#8d8d8d":"#999"}; font-family:'JetBrains Mono',monospace; font-size:12px; padding:8px 0; }
-        .lc-solution-lang { padding:3px 10px; border-radius:6px; font-size:12px; font-weight:700; background:rgba(255,161,22,0.12); color:#ffa116; font-family:'JetBrains Mono',monospace; display:inline-block; margin-bottom:10px; }
+        .lc-solution-lang { padding:3px 10px; border-radius:6px; font-size:12px; font-weight:700; background:var(--accent-bg); color:var(--accent); font-family:'JetBrains Mono',monospace; display:inline-block; margin-bottom:10px; }
         .lc-solution-code { background:${isDark?"#282828":"#f7f8fa"}; border:1px solid ${isDark?"#3a3a3a":"#e5e7eb"}; border-radius:10px; padding:16px; font-size:13px; font-family:'JetBrains Mono',monospace; color:${isDark?"#c9ccd3":"#333"}; line-height:1.7; overflow-x:auto; white-space:pre-wrap; }
       `}</style>
 
       {/* ── Top bar ── */}
       <div className="lc-topbar">
-        <NavLink to="/" className="lc-back"><ChevronLeft size={14} />Problems</NavLink>
+        <NavLink to="/practice" className="lc-back"><ChevronLeft size={14} />Problems</NavLink>
         <div className="lc-topbar-title">{problem.title}</div>
         <span className="lc-diff-badge" style={{ color: ds.color, background: ds.bg }}>{ds.label}</span>
         {problem.points != null && (
-          <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", background: "rgba(255,161,22,0.12)", color: "#ffa116" }}>
+          <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", background: "var(--accent-bg)", color: "var(--accent)" }}>
             {problem.points} pts
           </span>
         )}
@@ -408,7 +408,7 @@ export default function ProblemPage() {
             ))}
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
               {problem.points != null && (
-                <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: "#ffa116", fontWeight: 700 }}>
+                <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: "var(--accent)", fontWeight: 700 }}>
                   {problem.difficulty} · {problem.points}pts
                 </span>
               )}
@@ -456,7 +456,7 @@ export default function ProblemPage() {
                 {consoleTab === "testcase" && (
                   <div>
                     {loading && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#ffa116", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--accent)", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>
                         <span className="lc-spinner" />Running...
                       </div>
                     )}
@@ -479,7 +479,7 @@ export default function ProblemPage() {
                 {consoleTab === "result" && (
                   <div>
                     {loading && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#ffa116", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--accent)", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>
                         <span className="lc-spinner" />Submitting...
                       </div>
                     )}
@@ -506,7 +506,7 @@ export default function ProblemPage() {
                   <div>
                     {reviewing && (
                       <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#ffa116", fontFamily: "'JetBrains Mono',monospace", fontSize: 13, marginBottom: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--accent)", fontFamily: "'JetBrains Mono',monospace", fontSize: 13, marginBottom: 8 }}>
                           <span className="lc-spinner" />Agent is running your code and analyzing it...
                         </div>
                         <div className="lc-empty">This takes 15–30 seconds. The agent runs your code, reasons about failures, and verifies a fix.</div>

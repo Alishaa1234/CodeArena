@@ -9,14 +9,14 @@ import ThemeToggle from "../components/ThemeToggle";
 const OPTIONS = [
   { id: "create", title: "Create Problem", desc: "Add a new DSA problem with test cases and solutions", icon: Plus, color: "#00b8a3", route: "/admin/create" },
   { id: "delete", title: "Delete Problem", desc: "Remove problems from the platform permanently", icon: Trash2, color: "#ef4444", route: "/admin/delete" },
-  { id: "video", title: "Manage Videos", desc: "Upload and delete editorial solution videos", icon: Video, color: "#ffa116", route: "/admin/video" },
+  { id: "video", title: "Manage Videos", desc: "Upload and delete editorial solution videos", icon: Video, color: "var(--accent)", route: "/admin/video" },
 ];
 
 export default function Admin() {
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", fontFamily: "'Syne',sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", fontFamily: "'Inter',sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;500;600;700;800&display=swap');
         * { box-sizing:border-box; }
         .adm-nav { height:56px; background:var(--nav-bg); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 24px; gap:12px; }
         .adm-back { color:var(--text-muted); text-decoration:none; display:flex; align-items:center; gap:5px; font-size:13px; font-family:'JetBrains Mono',monospace; padding:6px 10px; border-radius:7px; transition:all 0.2s; border:1px solid var(--border-mid); background:none; }
@@ -42,7 +42,7 @@ export default function Admin() {
       <nav className="adm-nav">
         <NavLink to="/" className="adm-back"><ArrowLeft size={14} />Home</NavLink>
         <div className="adm-logo">
-          <div className="adm-logo-icon"><Code2 size={16} color="#000" /></div>
+          <div className="adm-logo-icon"><Code2 size={16} color="#fff" /></div>
           <span className="adm-logo-text">CodeArena</span>
         </div>
         <span className="adm-nav-tag">Admin</span>

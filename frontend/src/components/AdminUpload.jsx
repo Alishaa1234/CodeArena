@@ -61,8 +61,8 @@ export default function AdminUpload() {
         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 14, padding: 32 }}>
           <form onSubmit={handleSubmit(onSubmit)}>
             {/* Dropzone */}
-            <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, border: "2px dashed var(--border-mid)", borderRadius: 12, padding: "36px 24px", cursor: "pointer", marginBottom: 20, transition: "border-color 0.2s", background: file ? "rgba(255,161,22,0.04)" : "transparent", borderColor: file ? "rgba(255,161,22,0.4)" : "var(--border-mid)" }}>
-              <Film size={32} color={file ? "#ffa116" : "#333"} />
+            <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, border: "2px dashed var(--border-mid)", borderRadius: 12, padding: "36px 24px", cursor: "pointer", marginBottom: 20, transition: "border-color 0.2s", background: file ? "var(--accent-bg)" : "transparent", borderColor: file ? "var(--accent-border)" : "var(--border-mid)" }}>
+              <Film size={32} color={file ? "var(--accent)" : "#333"} />
               {file ? (
                 <div style={{ textAlign: "center" }}>
                   <div style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{file.name}</div>
@@ -93,7 +93,7 @@ export default function AdminUpload() {
                   <span>Uploading to Cloudinary...</span><span>{progress}%</span>
                 </div>
                 <div style={{ height: 4, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${progress}%`, background: "#ffa116", borderRadius: 2, transition: "width 0.3s" }} />
+                  <div style={{ height: "100%", width: `${progress}%`, background: "var(--accent)", borderRadius: 2, transition: "width 0.3s" }} />
                 </div>
               </div>
             )}
@@ -110,9 +110,9 @@ export default function AdminUpload() {
               </div>
             )}
 
-            <button type="submit" disabled={uploading} style={{ width: "100%", background: uploading ? "#1a1a1a" : "#ffa116", color: uploading ? "#666" : "#000", border: "none", borderRadius: 10, padding: "13px", fontSize: 15, fontWeight: 800, cursor: uploading ? "not-allowed" : "pointer", fontFamily: "'Syne',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <button type="submit" disabled={uploading} style={{ width: "100%", background: uploading ? "var(--bg-primary)" : "var(--accent)", color: uploading ? "var(--text-muted)" : "#fff", border: "none", borderRadius: 10, padding: "13px", fontSize: 15, fontWeight: 800, cursor: uploading ? "not-allowed" : "pointer", fontFamily: "'Inter',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               {uploading ? (
-                <><span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid #444", borderTopColor: "#888", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />Uploading...</>
+                <><span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid var(--accent-border)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />Uploading...</>
               ) : (
                 <><Upload size={15} />Upload Video</>
               )}

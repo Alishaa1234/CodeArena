@@ -76,7 +76,7 @@ function ExampleCard({ example, index, paramNames, isDark }) {
                         : <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
                             {lines.map((line, li) => (
                                 <span key={li} style={{ display: "inline-flex", alignItems: "baseline", gap: 5 }}>
-                                    <span style={{ color: "#ffa116", fontWeight: 600 }}>{params[li] || `param${li + 1}`}</span>
+                                    <span style={{ color: "var(--accent)", fontWeight: 600 }}>{params[li] || `param${li + 1}`}</span>
                                     <span style={{ color: muted }}>=</span>
                                     <span style={{ color: ink }}>{formatValue(line)}</span>
                                     {li < lines.length - 1 && <span style={{ color: muted }}>,</span>}
@@ -88,15 +88,15 @@ function ExampleCard({ example, index, paramNames, isDark }) {
             <div style={{ padding: "10px 14px", borderBottom: example.explanation ? `1px solid ${border}` : "none" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Output</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                    <span style={{ color: "#00b8a3", fontWeight: 600 }}>result</span>
-                    <span style={{ color: muted }}>=</span>
-                    <span style={{ color: ink }}>{formatValue(example.output || "")}</span>
+                     <span style={{ color: "#00b8a3", fontWeight: 600 }}>result</span>
+                     <span style={{ color: muted }}>=</span>
+                     <span style={{ color: ink }}>{formatValue(example.output || "")}</span>
                 </div>
             </div>
             {example.explanation && (
-                <div style={{ padding: "8px 14px", background: isDark ? "rgba(255,161,22,0.04)" : "rgba(255,161,22,0.03)" }}>
+                <div style={{ padding: "8px 14px", background: "var(--accent-bg)" }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Explanation</div>
-                    <div style={{ fontSize: 12, color: isDark ? "#c9ccd3" : "#555", lineHeight: 1.7, fontFamily: "'Syne',sans-serif" }}>{example.explanation}</div>
+                    <div style={{ fontSize: 12, color: isDark ? "#c9ccd3" : "#555", lineHeight: 1.7, fontFamily: "'Inter',sans-serif" }}>{example.explanation}</div>
                 </div>
             )}
         </div>
@@ -253,9 +253,9 @@ export default function DuelBattle({ socket }) {
     const CONSOLE_HEIGHT = 260;
 
     return (
-        <div style={{ height: "100vh", overflow: "hidden", fontFamily: "'Syne',sans-serif", background: bg, color: ink, display: "flex", flexDirection: "column" }}>
+        <div style={{ height: "100vh", overflow: "hidden", fontFamily: "'Inter',sans-serif", background: bg, color: ink, display: "flex", flexDirection: "column" }}>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;500;600;700;800&display=swap');
                 * { box-sizing:border-box; margin:0; padding:0; }
                 ::-webkit-scrollbar { width:6px; height:6px; }
                 ::-webkit-scrollbar-track { background:transparent; }
@@ -268,13 +268,13 @@ export default function DuelBattle({ socket }) {
                 .db-section { padding:12px 14px; border-bottom:1px solid ${border}; }
                 .db-section-title { font-size:10px; font-weight:700; color:${muted}; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
                 .db-prob-btn { width:100%; background:none; border:1px solid ${border}; border-radius:8px; padding:8px 10px; margin-bottom:5px; cursor:pointer; text-align:left; transition:all 0.15s; display:flex; align-items:center; gap:8px; }
-                .db-prob-btn:hover { border-color:#ffa116; background:rgba(255,161,22,0.05); }
-                .db-prob-btn.active { border-color:#ffa116; background:rgba(255,161,22,0.08); }
+                .db-prob-btn:hover { border-color:var(--accent); background:var(--accent-bg); }
+                .db-prob-btn.active { border-color:var(--accent); background:var(--accent-bg); }
                 .db-prob-btn.solved { border-color:rgba(0,184,163,0.4); background:rgba(0,184,163,0.05); }
                 .db-score-bar { height:6px; background:${isDark ? "#333" : "#eee"}; border-radius:3px; overflow:hidden; margin:4px 0; }
                 .db-score-fill { height:100%; border-radius:3px; transition:width 0.5s; }
                 .db-taunt-btn { background:none; border:1px solid ${border}; border-radius:7px; padding:5px 8px; cursor:pointer; font-size:16px; transition:all 0.15s; line-height:1; }
-                .db-taunt-btn:hover { border-color:#ffa116; background:rgba(255,161,22,0.08); transform:scale(1.15); }
+                .db-taunt-btn:hover { border-color:var(--accent); background:var(--accent-bg); transform:scale(1.15); }
                 .db-prog-bar { height:3px; background:${isDark ? "#333" : "#eee"}; border-radius:2px; overflow:hidden; margin-top:4px; }
                 .db-prog-fill { height:100%; border-radius:2px; background:#378ADD; transition:width 0.3s; }
 
@@ -285,21 +285,21 @@ export default function DuelBattle({ socket }) {
                 .db-right { flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden; background:${isDark ? "#1e1e1e" : "#fafafa"}; }
                 .db-langbar { height:40px; background:${bg2}; border-bottom:1px solid ${border}; display:flex; align-items:center; padding:0 12px; gap:6px; flex-shrink:0; }
                 .db-lang-btn { padding:4px 12px; border-radius:6px; font-size:12px; font-weight:700; background:none; border:1px solid ${border}; color:${muted}; cursor:pointer; font-family:'JetBrains Mono',monospace; transition:all 0.15s; }
-                .db-lang-btn:hover { border-color:#ffa116; color:#ffa116; }
-                .db-lang-btn.active { background:rgba(255,161,22,0.1); border-color:#ffa116; color:#ffa116; }
+                .db-lang-btn:hover { border-color:var(--accent); color:var(--accent); }
+                .db-lang-btn.active { background:var(--accent-bg); border-color:var(--accent); color:var(--accent); }
 
                 .db-console { border-top:1px solid ${border}; background:${bg}; display:flex; flex-direction:column; flex-shrink:0; }
                 .db-console-tabs { height:36px; display:flex; align-items:center; padding:0 8px; border-bottom:1px solid ${border}; flex-shrink:0; }
                 .db-console-tab { height:36px; padding:0 12px; display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:${muted}; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; white-space:nowrap; transition:all 0.15s; }
-                .db-console-tab.active { color:#ffa116; border-bottom-color:#ffa116; }
+                .db-console-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
                 .db-console-body { flex:1; overflow-y:auto; padding:12px 16px; min-height:0; }
 
                 .db-actionbar { height:44px; background:${bg2}; border-top:1px solid ${border}; display:flex; align-items:center; justify-content:space-between; padding:0 14px; flex-shrink:0; }
-                .db-btn { display:inline-flex; align-items:center; gap:7px; padding:7px 16px; border-radius:8px; font-size:13px; font-weight:700; font-family:'Syne',sans-serif; cursor:pointer; transition:all 0.15s; border:1px solid ${border}; background:none; color:${isDark ? "#c9ccd3" : "#444"}; }
+                .db-btn { display:inline-flex; align-items:center; gap:7px; padding:7px 16px; border-radius:8px; font-size:13px; font-weight:700; font-family:'Inter',sans-serif; cursor:pointer; transition:all 0.15s; border:1px solid ${border}; background:none; color:${isDark ? "#c9ccd3" : "#444"}; }
                 .db-btn:hover:not(:disabled) { border-color:${isDark ? "#555" : "#bbb"}; color:${ink}; }
                 .db-btn:disabled { opacity:0.4; cursor:not-allowed; }
-                .db-btn-submit { background:#ffa116; border-color:#ffa116; color:#000; }
-                .db-btn-submit:hover:not(:disabled) { background:#ffb84d; border-color:#ffb84d; color:#000; }
+                .db-btn-submit { background:var(--accent); border-color:var(--accent); color:#fff; }
+                .db-btn-submit:hover:not(:disabled) { background:var(--accent-hover); border-color:var(--accent-hover); color:#fff; }
                 .db-btn-accepted { background:#00b8a3; border-color:#00b8a3; color:#000; }
                 .db-console-toggle { display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:8px; font-size:13px; font-weight:700; border:1px solid ${border}; background:none; cursor:pointer; color:${muted}; transition:all 0.15s; }
                 .db-console-toggle:hover { color:${ink}; border-color:${isDark ? "#555" : "#bbb"}; }
@@ -307,7 +307,7 @@ export default function DuelBattle({ socket }) {
                 .db-icon-btn:hover { color:${ink}; background:${isDark ? "#333" : "#e5e7eb"}; }
                 .db-tc-card { background:${bg2}; border:1px solid ${border}; border-radius:10px; margin-bottom:8px; overflow:hidden; font-family:'JetBrains Mono',monospace; font-size:12px; }
                 .db-kv { background:${bg2}; border:1px solid ${border}; border-radius:10px; padding:10px 14px; min-width:110px; font-family:'JetBrains Mono',monospace; }
-                .db-spinner { width:14px; height:14px; border:2px solid rgba(255,161,22,0.2); border-top-color:#ffa116; border-radius:50%; animation:db-spin 0.7s linear infinite; flex-shrink:0; }
+                .db-spinner { width:14px; height:14px; border:2px solid var(--accent-border); border-top-color:var(--accent); border-radius:50%; animation:db-spin 0.7s linear infinite; flex-shrink:0; }
                 .db-taunt-toast { position:fixed; top:60px; left:50%; transform:translateX(-50%); background:${bg2}; border:1px solid ${border}; border-radius:12px; padding:10px 20px; font-size:20px; z-index:999; display:flex; align-items:center; gap:10px; animation:db-toast-in 0.25s ease; }
                 @keyframes db-spin { to { transform:rotate(360deg); } }
                 @keyframes db-toast-in { from{opacity:0;transform:translateX(-50%) translateY(-8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
@@ -369,7 +369,7 @@ export default function DuelBattle({ socket }) {
                                         </div>
                                         <div style={{ display: "flex", alignItems: "center" }}>
                                             <span style={{ fontSize: 10, color: dc.color, fontFamily: "'JetBrains Mono',monospace" }}>{prob.difficulty}</span>
-                                            <span style={{ fontSize: 10, fontWeight: 700, color: "#ffa116", fontFamily: "'JetBrains Mono',monospace", marginLeft: "auto" }}>+{prob.points}pts</span>
+                                            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", fontFamily: "'JetBrains Mono',monospace", marginLeft: "auto" }}>+{prob.points}pts</span>
                                         </div>
                                         {oppProg && !oppSolvedIt && (
                                             <div className="db-prog-bar">
@@ -417,7 +417,7 @@ export default function DuelBattle({ socket }) {
                 {showDesc && (
                     <div className="db-desc-panel">
                         <div className="db-desc-header">
-                            <FileText size={13} color="#ffa116" />
+                            <FileText size={13} color="var(--accent)" />
                             <span style={{ fontSize: 12, fontWeight: 700, color: ink, fontFamily: "'JetBrains Mono',monospace", flex: 1 }}>Description</span>
                             <button className="db-icon-btn" onClick={() => setShowDesc(false)}>
                                 <ChevronLeft size={13} />Hide
@@ -431,7 +431,7 @@ export default function DuelBattle({ socket }) {
                                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
                                         <span style={{ padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, color: ds.color, background: ds.bg, fontFamily: "'JetBrains Mono',monospace" }}>{activeProblemData.difficulty}</span>
                                         {activeProblemData.points != null && (
-                                            <span style={{ padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, color: "#ffa116", background: "rgba(255,161,22,0.12)", fontFamily: "'JetBrains Mono',monospace" }}>{activeProblemData.points} pts</span>
+                                            <span style={{ padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, color: "var(--accent)", background: "var(--accent-bg)", fontFamily: "'JetBrains Mono',monospace" }}>{activeProblemData.points} pts</span>
                                         )}
                                         {(activeProblemData.tags || []).map(t => (
                                             <span key={t} style={{ padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: isDark ? "#3a3a3a" : "#f0f0f0", color: isDark ? "#a8a8a8" : "#555", fontFamily: "'JetBrains Mono',monospace" }}>{t}</span>
@@ -478,7 +478,7 @@ export default function DuelBattle({ socket }) {
                             </button>
                         ))}
                         {activeProblem && (
-                            <span style={{ marginLeft: "auto", fontSize: 11, color: "#ffa116", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+                            <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--accent)", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
                                 {activeProblem.difficulty} · {activeProblem.points}pts
                             </span>
                         )}
@@ -514,7 +514,7 @@ export default function DuelBattle({ socket }) {
                             </div>
                             <div className="db-console-body">
                                 {loading && (
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#ffa116", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--accent)", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>
                                         <span className="db-spinner" />Running...
                                     </div>
                                 )}

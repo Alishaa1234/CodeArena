@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import useTheme from "../hooks/useTheme";
 import "./LandingPage.css";
 
@@ -32,6 +33,7 @@ export default function LandingPage() {
 function Nav() {
   const { theme, toggle } = useTheme();
   const [open, setOpen] = useState(false);
+  const { isAuthenticated, user } = useSelector((s) => s.auth);
 
   const links = [
     { label: "Practice", href: "#features" },
@@ -70,19 +72,50 @@ function Nav() {
             >
               {theme === "light" ? <MoonIcon /> : <SunIcon />}
             </button>
-            <Link
-              to="/login"
-              className="lp-hidden lp-rounded-md lp-px-3 lp-py-2 lp-text-sm lp-font-medium lp-text-muted-foreground lp-transition-colors lp-hover-text-foreground lp-sm-inline-flex"
-            >
-              Sign in
-            </Link>
-            <Link
-              to="/signup"
-              className="lp-inline-flex lp-items-center lp-gap-1.5 lp-rounded-md lp-bg-primary lp-px-3.5 lp-py-2 lp-text-sm lp-font-medium lp-text-primary-foreground lp-shadow-elegant lp-transition-all lp-hover-brightness-110"
-            >
-              Get started
-              <ArrowRight className="lp-size-3.5" />
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/"
+                  className="lp-inline-flex lp-items-center lp-gap-1.5 lp-rounded-md lp-bg-primary lp-px-3.5 lp-py-2 lp-text-sm lp-font-medium lp-text-primary-foreground lp-shadow-elegant lp-transition-all lp-hover-brightness-110"
+                >
+                  Go to Dashboard
+                  <ArrowRight className="lp-size-3.5" />
+                </Link>
+                <Link
+                  to="/profile"
+                  className="lp-flex lp-size-9 lp-shrink-0 lp-items-center lp-justify-center lp-rounded-full lp-text-sm lp-font-bold lp-text-white lp-transition-all lp-hover-brightness-110"
+                  style={{
+                    background: "linear-gradient(135deg, var(--lp-primary), #a855f7)",
+                    border: "2px solid color-mix(in oklab, var(--lp-primary) 30%, transparent)",
+                    cursor: "pointer",
+                    textDecoration: "none"
+                  }}
+                  title="Profile"
+                >
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+                  ) : (
+                    user?.firstName?.[0]?.toUpperCase()
+                  )}
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="lp-hidden lp-rounded-md lp-px-3 lp-py-2 lp-text-sm lp-font-medium lp-text-muted-foreground lp-transition-colors lp-hover-text-foreground lp-sm-inline-flex"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="lp-inline-flex lp-items-center lp-gap-1.5 lp-rounded-md lp-bg-primary lp-px-3.5 lp-py-2 lp-text-sm lp-font-medium lp-text-primary-foreground lp-shadow-elegant lp-transition-all lp-hover-brightness-110"
+                >
+                  Get started
+                  <ArrowRight className="lp-size-3.5" />
+                </Link>
+              </>
+            )}
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
@@ -106,6 +139,55 @@ function Nav() {
                   {l.label}
                 </a>
               ))}
+              <div className="lp-mt-4 lp-flex lp-flex-col lp-gap-2 lp-border-t lp-border-border-60 lp-pt-4">
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      to="/"
+                      onClick={() => setOpen(false)}
+                      className="lp-py-2 lp-text-sm lp-font-medium lp-text-primary lp-transition-colors"
+                    >
+                      Go to Dashboard
+                    </Link>
+                    <Link
+                      to="/profile"
+                      onClick={() => setOpen(false)}
+                      className="lp-py-2 lp-text-sm lp-font-medium lp-text-muted-foreground lp-transition-colors lp-hover-text-foreground lp-flex lp-items-center lp-gap-2"
+                    >
+                      <span
+                        className="lp-flex lp-size-7 lp-shrink-0 lp-items-center lp-justify-center lp-rounded-full lp-text-xs lp-font-bold lp-text-white"
+                        style={{
+                          background: "linear-gradient(135deg, var(--lp-primary), #a855f7)",
+                        }}
+                      >
+                        {user?.avatarUrl ? (
+                          <img src={user.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+                        ) : (
+                          user?.firstName?.[0]?.toUpperCase()
+                        )}
+                      </span>
+                      Profile
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      onClick={() => setOpen(false)}
+                      className="lp-py-2 lp-text-sm lp-font-medium lp-text-muted-foreground lp-transition-colors lp-hover-text-foreground"
+                    >
+                      Sign in
+                    </Link>
+                    <Link
+                      to="/signup"
+                      onClick={() => setOpen(false)}
+                      className="lp-py-2 lp-text-sm lp-font-medium lp-text-primary lp-transition-colors"
+                    >
+                      Get started
+                    </Link>
+                  </>
+                )}
+              </div>
             </nav>
           </div>
         ) : null}
@@ -119,6 +201,8 @@ function Nav() {
 /* -------------------------------------------------------------------------- */
 
 function Hero() {
+  const { isAuthenticated } = useSelector((s) => s.auth);
+
   return (
     <section className="lp-relative lp-overflow-hidden">
       <div aria-hidden className="lp-absolute lp-inset-0 lp-bg-hero-glow" />
@@ -160,13 +244,23 @@ function Hero() {
             className="lp-animate-fade-up lp-mt-10 lp-flex lp-flex-col lp-items-center lp-justify-center lp-gap-3 lp-sm-flex-row"
             style={{ animationDelay: "180ms" }}
           >
-            <Link
-              to="/signup"
-              className="lp-inline-flex lp-w-full lp-items-center lp-justify-center lp-gap-1.5 lp-rounded-md lp-bg-primary lp-px-5 lp-py-3 lp-text-sm lp-font-medium lp-text-primary-foreground lp-shadow-elegant lp-transition-all lp-hover-brightness-110 lp-sm-w-auto"
-            >
-              Start free
-              <ArrowRight className="lp-size-4" />
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/"
+                className="lp-inline-flex lp-w-full lp-items-center lp-justify-center lp-gap-1.5 lp-rounded-md lp-bg-primary lp-px-5 lp-py-3 lp-text-sm lp-font-medium lp-text-primary-foreground lp-shadow-elegant lp-transition-all lp-hover-brightness-110 lp-sm-w-auto"
+              >
+                Go to Dashboard
+                <ArrowRight className="lp-size-4" />
+              </Link>
+            ) : (
+              <Link
+                to="/signup"
+                className="lp-inline-flex lp-w-full lp-items-center lp-justify-center lp-gap-1.5 lp-rounded-md lp-bg-primary lp-px-5 lp-py-3 lp-text-sm lp-font-medium lp-text-primary-foreground lp-shadow-elegant lp-transition-all lp-hover-brightness-110 lp-sm-w-auto"
+              >
+                Start free
+                <ArrowRight className="lp-size-4" />
+              </Link>
+            )}
             <a
               href="#showcase"
               className="lp-inline-flex lp-w-full lp-items-center lp-justify-center lp-gap-1.5 lp-rounded-md lp-border lp-border-border lp-bg-surface-60 lp-px-5 lp-py-3 lp-text-sm lp-font-medium lp-text-foreground lp-backdrop-blur lp-transition-colors lp-hover-bg-surface lp-sm-w-auto"
@@ -443,6 +537,8 @@ function Stats() {
 /* -------------------------------------------------------------------------- */
 
 function CTA() {
+  const { isAuthenticated } = useSelector((s) => s.auth);
+
   return (
     <section id="pricing" className="lp-relative lp-overflow-hidden">
       <div className="lp-mx-auto lp-max-w-6xl lp-px-4 lp-py-20 lp-sm-px-6 lp-sm-py-28">
@@ -461,13 +557,23 @@ function CTA() {
               Start free. Upgrade only when you're crushing it. Cancel anytime.
             </p>
             <div className="lp-mt-8 lp-flex lp-flex-col lp-items-center lp-justify-center lp-gap-3 lp-sm-flex-row">
-              <Link
-                to="/signup"
-                className="lp-inline-flex lp-w-full lp-items-center lp-justify-center lp-gap-1.5 lp-rounded-md lp-bg-primary lp-px-5 lp-py-3 lp-text-sm lp-font-medium lp-text-primary-foreground lp-shadow-glow lp-transition-all lp-hover-brightness-110 lp-sm-w-auto"
-              >
-                Get started for free
-                <ArrowRight className="lp-size-4" />
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  to="/"
+                  className="lp-inline-flex lp-w-full lp-items-center lp-justify-center lp-gap-1.5 lp-rounded-md lp-bg-primary lp-px-5 lp-py-3 lp-text-sm lp-font-medium lp-text-primary-foreground lp-shadow-glow lp-transition-all lp-hover-brightness-110 lp-sm-w-auto"
+                >
+                  Go to Dashboard
+                  <ArrowRight className="lp-size-4" />
+                </Link>
+              ) : (
+                <Link
+                  to="/signup"
+                  className="lp-inline-flex lp-w-full lp-items-center lp-justify-center lp-gap-1.5 lp-rounded-md lp-bg-primary lp-px-5 lp-py-3 lp-text-sm lp-font-medium lp-text-primary-foreground lp-shadow-glow lp-transition-all lp-hover-brightness-110 lp-sm-w-auto"
+                >
+                  Get started for free
+                  <ArrowRight className="lp-size-4" />
+                </Link>
+              )}
               <a
                 href="#features"
                 className="lp-inline-flex lp-w-full lp-items-center lp-justify-center lp-gap-1.5 lp-rounded-md lp-border lp-border-border lp-bg-surface-60 lp-px-5 lp-py-3 lp-text-sm lp-font-medium lp-text-foreground lp-backdrop-blur lp-transition-colors lp-hover-bg-surface lp-sm-w-auto"

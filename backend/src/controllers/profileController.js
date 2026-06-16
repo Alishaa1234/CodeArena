@@ -55,7 +55,7 @@ const getProfile = async (req, res, next) => {
         const userId = req.result._id;
 
         const user = await User.findById(userId).select(
-            "firstName lastName emailId role createdAt eloRating duelsPlayed"
+            "firstName lastName emailId role createdAt eloRating duelsPlayed avatarUrl googleId"
         );
         if (!user) return res.status(404).json({ message: "User not found" });
 

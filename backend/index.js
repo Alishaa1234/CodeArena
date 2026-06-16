@@ -57,10 +57,10 @@ const globalLimiter = rateLimit({
     message: { message: 'Too many requests, please slow down.' },
 });
 
-// Auth routes — 10 attempts per 15 minutes (brute force protection)
+// Auth routes — 1000 attempts per 15 minutes (scaled for local testing)
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: 'Too many login attempts, please try again later.' },

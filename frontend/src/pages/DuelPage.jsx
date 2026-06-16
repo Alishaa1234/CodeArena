@@ -128,9 +128,9 @@ export default function DuelPage() {
     };
 
     return (
-        <div style={{ minHeight: "100vh", background: "var(--bg-primary)", fontFamily: "'Syne', sans-serif" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg-primary)", fontFamily: "'Inter', sans-serif" }}>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap');
                 * { box-sizing: border-box; }
             `}</style>
             {renderScreen()}

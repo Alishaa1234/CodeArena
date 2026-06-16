@@ -29,7 +29,7 @@ export default function AdminVideo() {
     finally { setConfirm(null); }
   };
 
-  const DIFF = { easy: "#00b8a3", medium: "#ffa116", hard: "#ef4444" };
+  const DIFF = { easy: "#00b8a3", medium: "var(--accent)", hard: "#ef4444" };
 
   return (
     <AdminLayout title="Manage Videos" subtitle="// upload and delete editorial videos">
@@ -61,10 +61,10 @@ export default function AdminVideo() {
                   </td>
                   <td style={{ padding: "12px 16px" }}>
                     <div style={{ display: "flex", gap: 8 }}>
-                      <NavLink to={`/admin/upload/${p._id}`} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "rgba(255,161,22,0.1)", border: "1px solid rgba(255,161,22,0.25)", borderRadius: 7, color: "#ffa116", fontSize: 12, fontWeight: 700, textDecoration: "none", fontFamily: "'Syne',sans-serif" }}>
+                      <NavLink to={`/admin/upload/${p._id}`} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "var(--accent-bg)", border: "1px solid var(--accent-border)", borderRadius: 7, color: "var(--accent)", fontSize: 12, fontWeight: 700, textDecoration: "none", fontFamily: "'Inter',sans-serif" }}>
                         <Upload size={12} />Upload
                       </NavLink>
-                      <button onClick={() => setConfirm(p._id)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 7, color: "#ef4444", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Syne',sans-serif" }}>
+                      <button onClick={() => setConfirm(p._id)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 7, color: "#ef4444", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter',sans-serif" }}>
                         <Trash2 size={12} />Delete
                       </button>
                     </div>
@@ -82,8 +82,8 @@ export default function AdminVideo() {
             <div style={{ fontSize: 17, fontWeight: 800, color: "var(--text-primary)", marginBottom: 8 }}>Delete Video?</div>
             <div style={{ fontSize: 13, color: "var(--text-muted)", fontFamily: "'JetBrains Mono',monospace", marginBottom: 24 }}>This will permanently remove the editorial video.</div>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <button onClick={() => setConfirm(null)} style={{ padding: "8px 20px", background: "none", border: "1px solid var(--border-mid)", borderRadius: 8, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 600 }}>Cancel</button>
-              <button onClick={() => handleDelete(confirm)} style={{ padding: "8px 20px", background: "#ef4444", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700 }}>Delete</button>
+              <button onClick={() => setConfirm(null)} style={{ padding: "8px 20px", background: "none", border: "1px solid var(--border-mid)", borderRadius: 8, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 600 }}>Cancel</button>
+              <button onClick={() => handleDelete(confirm)} style={{ padding: "8px 20px", background: "#ef4444", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 700 }}>Delete</button>
             </div>
           </div>
         </div>

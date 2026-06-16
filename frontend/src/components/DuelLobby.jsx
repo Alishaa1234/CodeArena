@@ -90,9 +90,9 @@ export default function DuelLobby({ socket }) {
     const ink2   = isDark ? "#c9ccd3" : "#3d3d3d";
 
     return (
-        <div style={{ minHeight: "100vh", background: bg, color: ink, fontFamily: "'Syne',sans-serif" }}>
+        <div style={{ minHeight: "100vh", background: bg, color: ink, fontFamily: "'Inter',sans-serif" }}>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap');
                 * { box-sizing:border-box; margin:0; padding:0; }
                 ::-webkit-scrollbar { width:6px; }
                 ::-webkit-scrollbar-track { background:transparent; }
@@ -110,35 +110,35 @@ export default function DuelLobby({ socket }) {
 
                 .dl-preset-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:4px; }
                 .dl-preset-btn { padding:8px 4px; border-radius:8px; font-size:12px; font-weight:700; font-family:'JetBrains Mono',monospace; cursor:pointer; border:1px solid ${border}; background:${bg2}; color:${muted}; transition:all 0.15s; text-align:center; }
-                .dl-preset-btn:hover { border-color:#ffa116; color:#ffa116; }
-                .dl-preset-btn.active { background:rgba(255,161,22,0.1); border-color:#ffa116; color:#ffa116; }
+                .dl-preset-btn:hover { border-color:var(--accent); color:var(--accent); }
+                .dl-preset-btn.active { background:var(--accent-bg); border-color:var(--accent); color:var(--accent); }
 
                 .dl-custom-input { width:100%; padding:9px 14px; border-radius:8px; border:1px solid ${border}; background:${bg2}; color:${ink}; font-size:13px; font-family:'JetBrains Mono',monospace; outline:none; transition:border 0.15s; margin-top:8px; }
-                .dl-custom-input:focus { border-color:#ffa116; }
+                .dl-custom-input:focus { border-color:var(--accent); }
 
                 .dl-count-row { display:flex; gap:8px; }
                 .dl-count-btn { flex:1; padding:9px 4px; border-radius:8px; font-size:13px; font-weight:700; font-family:'JetBrains Mono',monospace; cursor:pointer; border:1px solid ${border}; background:${bg2}; color:${muted}; transition:all 0.15s; text-align:center; }
-                .dl-count-btn:hover { border-color:#ffa116; color:#ffa116; }
-                .dl-count-btn.active { background:rgba(255,161,22,0.1); border-color:#ffa116; color:#ffa116; }
+                .dl-count-btn:hover { border-color:var(--accent); color:var(--accent); }
+                .dl-count-btn.active { background:var(--accent-bg); border-color:var(--accent); color:var(--accent); }
 
-                .dl-btn { width:100%; padding:11px; border-radius:8px; font-size:13px; font-weight:700; font-family:'Syne',sans-serif; cursor:pointer; transition:all 0.15s; border:none; display:flex; align-items:center; justify-content:center; gap:7px; }
-                .dl-btn-primary { background:#ffa116; color:#000; border:none; }
-                .dl-btn-primary:hover:not(:disabled) { background:#ffb84d; }
+                .dl-btn { width:100%; padding:11px; border-radius:8px; font-size:13px; font-weight:700; font-family:'Sora',sans-serif; cursor:pointer; transition:all 0.15s; border:none; display:flex; align-items:center; justify-content:center; gap:7px; }
+                .dl-btn-primary { background:var(--accent); color:#fff; border:none; }
+                .dl-btn-primary:hover:not(:disabled) { background:var(--accent-hover); }
                 .dl-btn-outline { background:none; border:1px solid ${border}; color:${isDark ? "#c9ccd3" : "#444"}; }
-                .dl-btn-outline:hover:not(:disabled) { border-color:#ffa116; color:#ffa116; background:rgba(255,161,22,0.05); }
+                .dl-btn-outline:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); background:rgba(99,102,241,0.05); }
                 .dl-btn:disabled { opacity:0.4; cursor:not-allowed; }
 
                 .dl-input { width:100%; padding:10px 14px; border-radius:8px; border:1px solid ${border}; background:${bg}; color:${ink}; font-size:16px; font-family:'JetBrains Mono',monospace; letter-spacing:0.14em; text-transform:uppercase; outline:none; transition:border 0.15s; text-align:center; margin-bottom:10px; }
-                .dl-input:focus { border-color:#ffa116; }
+                .dl-input:focus { border-color:var(--accent); }
                 .dl-input::placeholder { text-transform:none; letter-spacing:normal; color:${muted}; font-size:13px; }
 
                 .dl-error { font-size:12px; color:#ff375f; font-family:'JetBrains Mono',monospace; margin-top:6px; }
-                .dl-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; font-family:'JetBrains Mono',monospace; background:rgba(255,161,22,0.1); border:1px solid rgba(255,161,22,0.25); color:#ffa116; }
+                .dl-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; font-family:'JetBrains Mono',monospace; background:var(--accent-bg); border:1px solid var(--accent-border); color:var(--accent); }
                 .dl-board-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid ${border}; font-size:13px; }
                 .dl-board-row:last-child { border-bottom:none; }
                 .dl-skel { height:32px; border-radius:8px; background:${isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"}; position:relative; overflow:hidden; margin-bottom:8px; }
-                .dl-skel::after { content:''; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,${isDark ? "rgba(255,161,22,0.08)" : "rgba(0,0,0,0.04)"},transparent); animation:dl-skel 1.1s infinite; }
-                .dl-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,161,22,0.2); border-top-color:#ffa116; border-radius:50%; animation:dl-spin 0.7s linear infinite; }
+                .dl-skel::after { content:''; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,${isDark ? "rgba(99,102,241,0.08)" : "rgba(0,0,0,0.04)"},transparent); animation:dl-skel 1.1s infinite; }
+                .dl-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(99,102,241,0.2); border-top-color:var(--accent); border-radius:50%; animation:dl-spin 0.7s linear infinite; }
                 @keyframes dl-skel { to { transform:translateX(100%); } }
                 @keyframes dl-spin { to { transform:rotate(360deg); } }
             `}</style>
@@ -150,7 +150,7 @@ export default function DuelLobby({ socket }) {
                 <button
                     onClick={handleShowBoard}
                     style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: `1px solid ${border}`, borderRadius: 7, padding: "5px 12px", color: muted, cursor: "pointer", fontSize: 12, fontFamily: "'JetBrains Mono',monospace", transition: "all 0.15s" }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#ffa116"; e.currentTarget.style.color = "#ffa116"; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent)"; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.color = muted; }}
                 >
                     <Trophy size={12} />Leaderboard
@@ -165,8 +165,8 @@ export default function DuelLobby({ socket }) {
                 <div className="dl-card">
                     {/* Header */}
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
-                        <div style={{ width: 42, height: 42, background: "rgba(255,161,22,0.1)", border: "1px solid rgba(255,161,22,0.25)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Swords size={19} color="#ffa116" />
+                        <div style={{ width: 42, height: 42, background: "var(--accent-bg)", border: "1px solid var(--accent-border)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <Swords size={19} color="var(--accent)" />
                         </div>
                         <div>
                             <div style={{ fontSize: 16, fontWeight: 800, color: ink }}>Host a Duel</div>
@@ -257,7 +257,7 @@ export default function DuelLobby({ socket }) {
                     {showBoard && (
                         <div style={{ marginTop: 24, borderTop: `1px solid ${border}`, paddingTop: 16 }}>
                             <div style={{ fontSize: 12, fontWeight: 800, color: ink, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
-                                <Trophy size={12} color="#ffa116" />Top Players
+                                <Trophy size={12} color="var(--accent)" />Top Players
                             </div>
                             {leaderboardLoading
                                 ? Array.from({ length: 6 }).map((_, i) => <div key={i} className="dl-skel" />)
@@ -267,7 +267,7 @@ export default function DuelLobby({ socket }) {
                                         <div key={u._id} className="dl-board-row">
                                             <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: muted, width: 22 }}>#{i + 1}</span>
                                             <span style={{ flex: 1, color: ink, fontWeight: 600, fontSize: 13 }}>{u.firstName} {u.lastName}</span>
-                                            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: "#ffa116", fontWeight: 700 }}>{u.eloRating} ELO</span>
+                                            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: "var(--accent)", fontWeight: 700 }}>{u.eloRating} ELO</span>
                                             <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: muted }}>{u.duelsPlayed}d</span>
                                         </div>
                                     ))

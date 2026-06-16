@@ -42,18 +42,18 @@ export default function Editorial({ secureUrl, thumbnailUrl, duration }) {
   }, []);
 
   return (
-    <div style={{ width: "100%", fontFamily: "'Syne',sans-serif" }}>
+    <div style={{ width: "100%", fontFamily: "'Inter',sans-serif" }}>
       <style>{`
         .ed-wrap { position:relative; border-radius:12px; overflow:hidden; background:#000; cursor:pointer; }
         .ed-video { width:100%; aspect-ratio:16/9; display:block; }
         .ed-overlay { position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 40%); transition:opacity 0.3s; }
         .ed-overlay.hidden { opacity:0; pointer-events:none; }
-        .ed-center-btn { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:56px; height:56px; background:rgba(255,161,22,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; transition:transform 0.2s, background 0.2s; }
-        .ed-center-btn:hover { transform:translate(-50%,-50%) scale(1.1); background:#ffa116; }
+        .ed-center-btn { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:56px; height:56px; background:var(--accent); opacity:0.9; border-radius:50%; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; transition:transform 0.2s, background 0.2s; }
+        .ed-center-btn:hover { transform:translate(-50%,-50%) scale(1.1); background:var(--accent-hover); opacity:1; }
         .ed-controls { position:absolute; bottom:0; left:0; right:0; padding:12px 16px; }
         .ed-progress { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
         .ed-progress input[type=range] { flex:1; -webkit-appearance:none; height:3px; border-radius:2px; background:rgba(255,255,255,0.2); outline:none; cursor:pointer; }
-        .ed-progress input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:#ffa116; cursor:pointer; }
+        .ed-progress input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:var(--accent); cursor:pointer; }
         .ed-time { font-size:12px; color:rgba(255,255,255,0.7); font-family:'JetBrains Mono',monospace; white-space:nowrap; }
         .ed-btns { display:flex; align-items:center; gap:8px; }
         .ed-ctrl-btn { background:none; border:none; color:rgba(255,255,255,0.8); cursor:pointer; padding:4px; border-radius:5px; display:flex; transition:color 0.15s; }
@@ -65,7 +65,7 @@ export default function Editorial({ secureUrl, thumbnailUrl, duration }) {
 
         <div className={`ed-overlay${showControls ? "" : " hidden"}`}>
           <button className="ed-center-btn" onClick={toggle}>
-            {playing ? <Pause size={22} color="#000" /> : <Play size={22} color="#000" style={{ marginLeft: 2 }} />}
+            {playing ? <Pause size={22} color="#fff" /> : <Play size={22} color="#fff" style={{ marginLeft: 2 }} />}
           </button>
           <div className="ed-controls">
             <div className="ed-progress">

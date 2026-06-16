@@ -9,7 +9,7 @@ import { CheckCircle2, XCircle, AlertCircle, Clock, MemoryStick, X } from "lucid
 const STATUS_CONFIG = {
   accepted: { color: "#00b8a3", bg: "rgba(0,184,163,0.1)", icon: <CheckCircle2 size={12} /> },
   wrong:    { color: "#ef4444", bg: "rgba(239,68,68,0.1)",  icon: <XCircle size={12} /> },
-  error:    { color: "#ffa116", bg: "rgba(255,161,22,0.1)", icon: <AlertCircle size={12} /> },
+  error:    { color: "var(--warning)", bg: "var(--warning-bg)", icon: <AlertCircle size={12} /> },
   pending:  { color: "#888",    bg: "rgba(136,136,136,0.1)",icon: <Clock size={12} /> },
 };
 
@@ -35,7 +35,7 @@ export default function SubmissionHistory({ problemId }) {
   if (error) return <div style={{ color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>{error}</div>;
 
   return (
-    <div style={{ fontFamily: "'Syne',sans-serif" }}>
+    <div style={{ fontFamily: "'Inter',sans-serif" }}>
       <style>{`
         .sh-table { width:100%; border-collapse:collapse; }
         .sh-th { padding:8px 12px; text-align:left; font-size:11px; color:#555; text-transform:uppercase; letter-spacing:0.7px; font-family:'JetBrains Mono',monospace; border-bottom:1px solid #1a1a1a; font-weight:500; }

@@ -99,10 +99,10 @@ export default function DuelRecap() {
                 .rc-card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:16px; padding:28px; margin-bottom:16px; }
                 .rc-inner { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
                 .rc-label { font-size:11px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; margin-bottom:3px; }
-                .rc-btn { padding:9px 20px; border-radius:8px; font-size:14px; font-weight:700; font-family:'Syne',sans-serif; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:6px; }
+                .rc-btn { padding:9px 20px; border-radius:8px; font-size:14px; font-weight:700; font-family:'Inter',sans-serif; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:6px; }
                 .rc-btn-outline { background:none; border:1px solid var(--border-strong); color:var(--text-secondary); }
                 .rc-btn-outline:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-bg); }
-                .rc-btn-primary { background:var(--accent); border:none; color:#000; }
+                .rc-btn-primary { background:var(--accent); border:none; color:#fff; }
                 .rc-btn-primary:hover { opacity:0.88; }
                 .rc-divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
                 .rc-view-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:11px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; gap:4px; font-family:'JetBrains Mono',monospace; transition:all 0.15s; white-space:nowrap; }

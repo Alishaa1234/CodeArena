@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, NavLink } from "react-router";
-import { loginUser } from "../authSlice";
+import { loginUser, loginGoogle } from "../authSlice";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Terminal, Code2, FileSearch, Video } from "lucide-react";
 
@@ -39,6 +39,40 @@ export default function Login() {
 
   const onSubmit = (data) => dispatch(loginUser(data));
 
+  const handleGoogleLogin = (response) => {
+    dispatch(loginGoogle(response.credential));
+  };
+
+  useEffect(() => {
+    const initGoogle = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+          callback: handleGoogleLogin,
+        });
+        const btnContainer = document.getElementById("google-signin-btn");
+        if (btnContainer) {
+          window.google.accounts.id.renderButton(btnContainer, {
+            theme: "outline",
+            size: "large",
+            width: 176,
+            text: "signin_with",
+          });
+        }
+      }
+    };
+
+    initGoogle();
+    const interval = setInterval(() => {
+      if (window.google) {
+        initGoogle();
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [dispatch]);
+
   const terminalLines = [
     { p: "~/codearena", c: "$ auth --login", t: "cmd" },
     { p: "system", c: "› verifying credentials...", t: "log" },
@@ -53,7 +87,7 @@ export default function Login() {
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap');
 
         :root {
-          --bg: #0a0a0f;
+          --bg: #0a0b10;
           --panel: #11121a;
           --panel-2: #161823;
           --border: #1f2030;
@@ -61,8 +95,8 @@ export default function Login() {
           --text: #e6e6ef;
           --muted: #8a8ba3;
           --faint: #50526a;
-          --accent: #ffa116;
-          --accent-2: #ff5c8a;
+          --accent: #6366f1;
+          --accent-2: #a855f7;
           --ok: #46d39a;
           --err: #ff5d6c;
         }
@@ -87,8 +121,8 @@ export default function Login() {
         .ca-bg {
           position: absolute; inset: 0; pointer-events: none;
           background:
-            radial-gradient(ellipse 50% 40% at 15% 20%, rgba(255,161,22,0.10), transparent 70%),
-            radial-gradient(ellipse 40% 50% at 85% 80%, rgba(255,92,138,0.08), transparent 70%);
+            radial-gradient(ellipse 50% 40% at 15% 20%, rgba(99,102,241,0.12), transparent 70%),
+            radial-gradient(ellipse 40% 50% at 85% 80%, rgba(168,85,247,0.08), transparent 70%);
         }
         .ca-grid {
           position: absolute; inset: 0; pointer-events: none;
@@ -116,9 +150,9 @@ export default function Login() {
         }
         .ca-brand-mark {
           width: 38px; height: 38px; border-radius: 10px;
-          background: linear-gradient(135deg, var(--accent), #ff7a00);
-          display: grid; place-items: center; color: #0a0a0f;
-          box-shadow: 0 8px 30px rgba(255,161,22,0.35);
+          background: linear-gradient(135deg, var(--accent), #818cf8);
+          display: grid; place-items: center; color: #fff;
+          box-shadow: 0 8px 30px rgba(99,102,241,0.35);
         }
         .ca-brand-name span { color: var(--accent); }
 
@@ -418,8 +452,8 @@ export default function Login() {
           <div className="ca-divider">or continue with</div>
 
           <div className="ca-socials">
-            <button className="ca-soc">{"<>"} GitHub</button>
-            <button className="ca-soc">G  Google</button>
+            <button type="button" className="ca-soc">{"<>"} GitHub</button>
+            <div id="google-signin-btn" style={{ display: "flex", justifyContent: "center" }}></div>
           </div>
 
           <div className="ca-foot">

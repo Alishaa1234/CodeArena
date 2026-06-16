@@ -6,7 +6,8 @@ import { Code2 } from "lucide-react";
 
 import Login        from "./pages/Login";
 import Signup       from "./pages/Signup";
-import Homepage     from "./pages/Homepage";
+import Dashboard    from "./pages/Dashboard";
+import PracticePage from "./pages/PracticePage";
 import LandingPage  from "./pages/LandingPage";
 import ProblemPage  from "./pages/ProblemPage";
 import ProfilePage  from "./pages/ProfilePage";
@@ -49,7 +50,8 @@ function App() {
     return (
         <Routes>
             {/* ── Core routes ── */}
-            <Route path="/"                        element={isAuthenticated ? <Homepage />    : <LandingPage />} />
+            <Route path="/"                        element={isAuthenticated ? <Dashboard />    : <LandingPage />} />
+            <Route path="/practice"                element={isAuthenticated ? <PracticePage /> : <Navigate to="/login" />} />
             <Route path="/login"                   element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
             <Route path="/signup"                  element={isAuthenticated ? <Navigate to="/" /> : <Signup />} />
             <Route path="/profile"                 element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} />

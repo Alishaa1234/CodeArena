@@ -2,23 +2,23 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* â”€â”€ Dark theme (default) â”€â”€ */
+/* ── Dark theme (default) ── */
 :root {
-  --bg-primary:    #0a0a0a;
-  --bg-secondary:  #111111;
-  --bg-tertiary:   #161616;
-  --bg-card:       #111111;
-  --border:        #1a1a1a;
-  --border-mid:    #222222;
-  --border-strong: #2a2a2a;
+  --bg-primary:    #0a0b10;
+  --bg-secondary:  #10111a;
+  --bg-tertiary:   #151622;
+  --bg-card:       #10111a;
+  --border:        rgba(255, 255, 255, 0.06);
+  --border-mid:    #1d1e2b;
+  --border-strong: #2d2f42;
   --text-primary:  #e0e0e0;
   --text-secondary:#aaaaaa;
   --text-muted:    #666666;
   --text-faint:    #444444;
-  --accent:        #ffa116;
-  --accent-hover:  #e8911a;
-  --accent-bg:     rgba(255, 161, 22, 0.1);
-  --accent-border: rgba(255, 161, 22, 0.25);
+  --accent:        #6366f1;
+  --accent-hover:  #4f46e5;
+  --accent-bg:     rgba(99, 102, 241, 0.08);
+  --accent-border: rgba(99, 102, 241, 0.25);
   --success:       #00b8a3;
   --success-bg:    rgba(0, 184, 163, 0.1);
   --success-border:rgba(0, 184, 163, 0.25);
@@ -28,12 +28,12 @@
   --warning:       #ffa116;
   --warning-bg:    rgba(255, 161, 22, 0.1);
   --code-bg:       #0d0d0d;
-  --nav-bg:        rgba(10, 10, 10, 0.98);
-  --input-bg:      #0a0a0a;
+  --nav-bg:        rgba(10, 11, 16, 0.98);
+  --input-bg:      #0a0b10;
   --scrollbar:     #222222;
 }
 
-/* â”€â”€ Light theme â”€â”€ */
+/* ── Light theme ── */
 :root.light {
   --bg-primary:    #ffffff;
   --bg-secondary:  #f8f9fa;
@@ -46,10 +46,10 @@
   --text-secondary:#495057;
   --text-muted:    #868e96;
   --text-faint:    #adb5bd;
-  --accent:        #e8911a;
-  --accent-hover:  #d4820f;
-  --accent-bg:     rgba(232, 145, 26, 0.08);
-  --accent-border: rgba(232, 145, 26, 0.3);
+  --accent:        #4f46e5;
+  --accent-hover:  #4338ca;
+  --accent-bg:     rgba(79, 70, 229, 0.08);
+  --accent-border: rgba(79, 70, 229, 0.3);
   --success:       #0ca678;
   --success-bg:    rgba(12, 166, 120, 0.08);
   --success-border:rgba(12, 166, 120, 0.3);
@@ -85,7 +85,7 @@ html, body {
 }
 
 body {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 ::selection {
