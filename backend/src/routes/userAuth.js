@@ -27,7 +27,11 @@ authRouter.get('/check', authMiddleware(), (req, res) => {
 // Used by Socket.io on the frontend — httpOnly cookies can't be read by JS
 // so this endpoint echoes the token back so the socket can auth with it
 authRouter.get('/get-token', authMiddleware(), (req, res) => {
-    res.json({ token: req.cookies.token });
+    let token = req.cookies.token;
+    if (!token && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+        token = req.headers.authorization.split(" ")[1];
+    }
+    res.json({ token });
 });
 
 module.exports = authRouter;

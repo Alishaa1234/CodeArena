@@ -46,7 +46,7 @@ const register = async (req, res, next) => {
         );
 
         res.cookie('token', token, COOKIE_OPTIONS);
-        res.status(201).json({ user: buildUserReply(user), message: "Registered successfully" });
+        res.status(201).json({ user: buildUserReply(user), token, message: "Registered successfully" });
     } catch (err) {
         next(err);
     }
@@ -74,7 +74,7 @@ const login = async (req, res, next) => {
         );
 
         res.cookie('token', token, COOKIE_OPTIONS);
-        res.status(200).json({ user: buildUserReply(user), message: "Logged in successfully" });
+        res.status(200).json({ user: buildUserReply(user), token, message: "Logged in successfully" });
     } catch (err) {
         next(err);
     }
@@ -113,7 +113,7 @@ const adminRegister = async (req, res, next) => {
         );
 
         res.cookie('token', token, COOKIE_OPTIONS);
-        res.status(201).json({ message: "Admin registered successfully" });
+        res.status(201).json({ token, message: "Admin registered successfully" });
     } catch (err) {
         next(err);
     }
@@ -198,7 +198,7 @@ const googleLogin = async (req, res, next) => {
         );
 
         res.cookie('token', token, COOKIE_OPTIONS);
-        res.status(200).json({ user: buildUserReply(user), message: "Logged in with Google successfully" });
+        res.status(200).json({ user: buildUserReply(user), token, message: "Logged in with Google successfully" });
     } catch (err) {
         next(err);
     }
