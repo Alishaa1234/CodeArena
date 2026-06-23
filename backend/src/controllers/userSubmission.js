@@ -53,7 +53,7 @@ const submitCode = async (req, res, next) => {
                 memory = Math.max(memory, test.memory);
             } else {
                 status = test.status_id === 4 ? 'error' : 'wrong';
-                errorMessage = test.stderr;
+                errorMessage = test.compile_output || test.stderr;
             }
         }
 
@@ -69,12 +69,16 @@ const submitCode = async (req, res, next) => {
             await req.result.save();
         }
 
+        const isCompileError = testResult.some(t => t.status_id === 6);
+
         res.status(201).json({
             accepted: status === 'accepted',
             totalTestCases: submittedResult.testCasesTotal,
             passedTestCases: testCasesPassed,
             runtime,
             memory,
+            error: errorMessage,
+            isCompileError,
         });
     } catch (err) {
         next(err);
@@ -120,11 +124,12 @@ const runCode = async (req, res, next) => {
                 memory = Math.max(memory, test.memory);
             } else {
                 success = false;
-                errorMessage = test.stderr;
+                errorMessage = test.compile_output || test.stderr;
             }
         }
 
-        res.status(200).json({ success, testCases: testResult, runtime, memory });
+        const isCompileError = testResult.some(t => t.status_id === 6);
+        res.status(200).json({ success, testCases: testResult, runtime, memory, error: errorMessage, isCompileError });
     } catch (err) {
         next(err);
     }

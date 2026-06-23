@@ -91,12 +91,13 @@ Return ONLY a JSON object like:
     }
 };
 
-// ── AI: Section detection ─────────────────────────────────────────────────────
+// ── AI: Section detection (enriched with experience metadata) ─────────────────
 const detectSections = async (resumeText) => {
     const raw = await askAi([
         {
             role:    "system",
             content: `Analyze this resume and detect sections. Score each section 0-100 for ATS friendliness.
+Also estimate the candidate's total work experience in months and identify seniority signals.
 Return ONLY a JSON object following this exact schema. Do not copy the placeholder data below; populate the values with actual findings from the resume. If no bullets exist in the resume, return an empty array for "bullets".
 Schema format:
 {
@@ -112,8 +113,13 @@ Schema format:
     "score": 80,
     "issues": ["uses invalid elements", "missing metrics"]
   },
-  "bullets": ["actual weak bullet point text from resume", "another weak bullet point text from resume"]
-}`,
+  "bullets": ["actual weak bullet point text from resume", "another weak bullet point text from resume"],
+  "experienceMonths": 36,
+  "seniority": ["mid-level"]
+}
+
+For experienceMonths: estimate total months of professional work experience. Students with only internships might have 3-6 months. Candidates with no work experience should have 0.
+For seniority: list detected seniority signals like "intern", "trainee", "junior", "mid-level", "senior", "lead", "principal", "manager", "director". Include all that apply.`,
         },
         { role: "user", content: resumeText.slice(0, 3000) },
     ]);
@@ -121,12 +127,18 @@ Schema format:
         const clean = raw.replace(/```json|```/g, "").trim();
         return JSON.parse(clean);
     } catch {
-        return { sections: {}, format: { score: 70, issues: [] }, bullets: [] };
+        return { sections: {}, format: { score: 70, issues: [] }, bullets: [], experienceMonths: 0, seniority: [] };
     }
 };
 
 // ── AI: Score justification + skill gaps + learning path ──────────────────────
-const generateLLMAnalysis = async (resumeText, jdText, fitScore, missingSkills, role) => {
+const generateLLMAnalysis = async (resumeText, jdText, fitScore, missingSkills, role, candidateProfile = "professional") => {
+    const profileContext = {
+        student:      "The candidate is a student/recent graduate. Evaluate based on projects, coursework, and potential rather than years of experience.",
+        early_career: "The candidate is early in their career (0-2 years). Weight internships and personal projects alongside any professional experience.",
+        professional: "The candidate is an experienced professional. Evaluate based on depth of experience, leadership, and impact.",
+    };
+
     const raw = await askAi([
         {
             role: "system",
@@ -134,10 +146,12 @@ const generateLLMAnalysis = async (resumeText, jdText, fitScore, missingSkills, 
 
 The candidate scored ${fitScore}/100 on ATS fit. Their missing skills are: ${missingSkills.slice(0, 15).join(", ")}.
 
+Candidate Profile: ${candidateProfile}. ${profileContext[candidateProfile] || profileContext.professional}
+
 Return ONLY a JSON object following this exact schema. Do not output the example values below; instead, extract actual data based on the candidate's resume and job description. If no skill gaps exist, return empty arrays.
 Schema format:
 {
-  "justification": "2-4 sentence explanation of WHY the candidate scored ${fitScore}/100. Be specific about strengths and weaknesses.",
+  "justification": "2-4 sentence explanation of WHY the candidate scored ${fitScore}/100. Be specific about strengths and weaknesses. Consider the candidate's profile type (${candidateProfile}) when evaluating.",
   "skillGaps": [
     {
       "skill": "name of missing/weak skill",

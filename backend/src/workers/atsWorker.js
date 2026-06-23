@@ -2,7 +2,15 @@ const { Worker } = require("bullmq");
 const fs   = require("fs");
 const path = require("path");
 const { connection } = require("../config/atsQueue");
-const { computeFitScore, extractSkillEntities } = require("../utils/nlpPipeline");
+const { computeFitScore, extractSkillEntities, computeSectionWeightedScore } = require("../utils/nlpPipeline");
+const {
+    detectProfile,
+    getAdaptiveWeights,
+    computeQuantifiedImpact,
+    detectActionVerbs,
+    generateFlags,
+    PROFILE_STUDENT,
+} = require("../utils/profileScorer");
 const ATSAnalysis = require("../models/atsAnalysis");
 
 // Import all the pipeline helper functions from the controller
@@ -22,7 +30,7 @@ const STAGES = {
     NLP:         { stage: "nlp",         label: "Running NLP pipeline...",       percent: 15 },
     KEYWORDS:    { stage: "keywords",    label: "Extracting keywords with AI...",percent: 30 },
     SECTIONS:    { stage: "sections",    label: "Analyzing resume sections...",  percent: 45 },
-    SCORING:     { stage: "scoring",     label: "Computing weighted scores...",  percent: 55 },
+    SCORING:     { stage: "scoring",     label: "Profile-aware scoring...",      percent: 55 },
     LLM:         { stage: "llm",         label: "Generating AI analysis...",     percent: 70 },
     SUGGESTIONS: { stage: "suggestions", label: "Building recommendations...",   percent: 85 },
     SAVING:      { stage: "saving",      label: "Saving report...",             percent: 95 },
@@ -69,13 +77,39 @@ const processATSJob = async (job) => {
             }
         });
 
-        // 5. Detect resume sections via AI
+        // 5. Detect resume sections via AI (enriched with experienceMonths + seniority)
         await job.updateProgress(STAGES.SECTIONS);
         const sectionData = await detectSections(resumeText);
 
-        // 6. Role-specific weighted scoring
+        // ══════════════════════════════════════════════════════════════════════
+        // 6. PROFILE-AWARE SCORING (Jobsy Integration)
+        // All steps below are pure JS — no API calls, instant execution.
+        // ══════════════════════════════════════════════════════════════════════
         await job.updateProgress(STAGES.SCORING);
-        const weights   = getRoleWeights(effectiveRole);
+
+        // 6a. Detect candidate profile (student / early_career / professional)
+        const profileResult = detectProfile(resumeText, sectionData);
+        const candidateProfile = profileResult.profile;
+
+        // 6b. Get adaptive weights (merge profile-based + role-based)
+        const baseRoleWeights = getRoleWeights(effectiveRole);
+        const weights = getAdaptiveWeights(candidateProfile, baseRoleWeights);
+
+        // 6c. Compute quantified impact score
+        const impactResult = computeQuantifiedImpact(resumeText);
+
+        // 6d. Detect action verbs
+        const verbResult = detectActionVerbs(resumeText);
+
+        // 6e. Generate profile-aware flags
+        const flags = generateFlags(resumeText, sectionData, candidateProfile, impactResult, verbResult);
+
+        // 6f. Section-weighted keyword scoring
+        const allJdKeywords = [...allAiKeywords, ...nlpResult.keywords.matched, ...nlpResult.keywords.missing];
+        const uniqueJdKeywords = [...new Set(allJdKeywords)];
+        const sectionWeighted = computeSectionWeightedScore(resumeText, sectionData, uniqueJdKeywords);
+
+        // 6g. Compute individual dimension scores
         const techScore = nlpResult.keywordMatchScore;
         const toolScore = nlpResult.keywordMatchScore;
         const softScore = Math.round(
@@ -87,6 +121,13 @@ const processATSJob = async (job) => {
         );
         const fmtScore = sectionData.format?.score || 70;
 
+        // 6h. Action verb bonus for students without formal experience
+        let actionVerbBonus = 0;
+        if (candidateProfile === PROFILE_STUDENT && verbResult.hasStrongVerbs) {
+            actionVerbBonus = 3; // +3 points for demonstrating active development work
+        }
+
+        // 6i. Weighted score using adaptive weights
         const weightedScore = Math.round(
             techScore * weights.technical +
             softScore * weights.soft      +
@@ -94,16 +135,25 @@ const processATSJob = async (job) => {
             fmtScore  * weights.format
         );
 
-        const finalScore = Math.round(nlpResult.fitScore * 0.4 + weightedScore * 0.6);
+        // 6j. Section-weighted adjustment (blend 15% section-weighted score)
+        const sectionAdjusted = Math.round(
+            weightedScore * 0.85 +
+            sectionWeighted.sectionWeightedScore * 0.15
+        );
+
+        // 6k. Final score = NLP fit * 0.4 + weighted * 0.6 + impact bonus + verb bonus
+        const impactBonus = Math.round(impactResult.score * 0.5); // 0-5 point bonus
+        const rawFinal = Math.round(nlpResult.fitScore * 0.4 + sectionAdjusted * 0.6) + impactBonus + actionVerbBonus;
+        const finalScore = Math.min(100, Math.max(0, rawFinal));
         const benchmark  = getBenchmark(finalScore, effectiveRole);
 
         const allMissing = [...new Set([...nlpResult.keywords.missing, ...aiMissing])];
         const allMatched = [...new Set([...nlpResult.keywords.matched, ...aiMatched])];
 
-        // 7. LLM Analysis — justification + skill gaps + learning path
+        // 7. LLM Analysis — justification + skill gaps + learning path (profile-aware)
         await job.updateProgress(STAGES.LLM);
         const llmAnalysis = await generateLLMAnalysis(
-            resumeText, jdText, finalScore, allMissing, effectiveRole
+            resumeText, jdText, finalScore, allMissing, effectiveRole, candidateProfile
         );
 
         // 8. AI Suggestions
@@ -134,6 +184,13 @@ const processATSJob = async (job) => {
             sectionScores:   sectionData.sections || {},
             formatAnalysis:  sectionData.format || {},
             benchmark,
+            // ── Profile-Aware Fields (new) ──────────────────────────
+            candidateProfile,
+            flags,
+            quantifiedImpact: impactResult,
+            actionVerbs:      verbResult,
+            profileSignals:   profileResult.signals,
+            // ── Suggestions & AI Analysis ────────────────────────────
             suggestions: {
                 missingKeywords: suggestions.missingKeywordsToAdd || [],
                 weakBullets:     suggestions.weakBullets           || [],
@@ -178,7 +235,7 @@ const startATSWorker = () => {
         console.error(`[ATS Worker] Job ${job?.id} failed:`, err.message);
     });
 
-    console.log("[ATS Worker] Started — listening for ats-analysis jobs");
+    console.log("[ATS Worker] Started — listening for ats-analysis jobs (profile-aware scoring v2)");
     return worker;
 };
 

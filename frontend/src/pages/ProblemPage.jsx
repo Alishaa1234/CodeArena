@@ -166,6 +166,30 @@ function RunCaseCard({ tc, index, paramNames, isDark }) {
   );
 }
 
+const parseCppError = (msg) => {
+  if (!msg) return null;
+  const match = msg.match(/[a-zA-Z0-9_\-\.\/]+\.cpp:(\d+):(?:(\d+):)?\s*(?:error|warning):/i);
+  return match ? { line: parseInt(match[1], 10), column: match[2] ? parseInt(match[2], 10) : 1 } : null;
+};
+
+const parseJavaError = (msg) => {
+  if (!msg) return null;
+  const match = msg.match(/[a-zA-Z0-9_\-\.\/]+\.java:(\d+):(?:\d+:)?\s*(?:error|warning):/i);
+  return match ? { line: parseInt(match[1], 10), column: 1 } : null;
+};
+
+const parseNodeError = (msg) => {
+  if (!msg) return null;
+  const match = msg.match(/[a-zA-Z0-9_\-\.\/]+\.js:(\d+)/i);
+  return match ? { line: parseInt(match[1], 10), column: 1 } : null;
+};
+
+const parseGenericError = (msg) => {
+  if (!msg) return null;
+  const match = msg.match(/(?:line\s+)(\d+)/i);
+  return match ? { line: parseInt(match[1], 10), column: 1 } : null;
+};
+
 export default function ProblemPage() {
   const { problemId } = useParams();
   const [isDark, setIsDark] = useState(!document.documentElement.classList.contains("light"));
@@ -191,6 +215,51 @@ export default function ProblemPage() {
   const [aiReview,     setAiReview]     = useState(null);
   const [reviewing,    setReviewing]    = useState(false);
   const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+
+  const clearMarkers = () => {
+    if (editorRef.current && monacoRef.current) {
+      monacoRef.current.editor.setModelMarkers(editorRef.current.getModel(), "compiler", []);
+    }
+  };
+
+  const parseAndApplyErrors = (errorMessage, language) => {
+    if (!editorRef.current || !monacoRef.current || !errorMessage) return;
+    const model = editorRef.current.getModel();
+    if (!model) return;
+
+    let errorDetails = null;
+    if (language === "cpp") {
+      errorDetails = parseCppError(errorMessage);
+    } else if (language === "java") {
+      errorDetails = parseJavaError(errorMessage);
+    } else if (language === "javascript") {
+      errorDetails = parseNodeError(errorMessage);
+    }
+
+    if (!errorDetails) {
+      errorDetails = parseGenericError(errorMessage);
+    }
+
+    if (errorDetails) {
+      const { line, column } = errorDetails;
+      const lineCount = model.getLineCount();
+      const validLine = Math.max(1, Math.min(line, lineCount));
+      const maxColumn = model.getLineMaxColumn(validLine);
+      const validColumn = Math.max(1, Math.min(column || 1, maxColumn));
+
+      monacoRef.current.editor.setModelMarkers(model, "compiler", [
+        {
+          startLineNumber: validLine,
+          startColumn: 1,
+          endLineNumber: validLine,
+          endColumn: maxColumn,
+          message: errorMessage,
+          severity: monacoRef.current.MarkerSeverity.Error,
+        }
+      ]);
+    }
+  };
 
   useEffect(() => {
     const fetchProblem = async () => {
@@ -198,6 +267,20 @@ export default function ProblemPage() {
       try {
         const { data } = await axiosClient.get(`/problem/problemById/${problemId}`);
         setProblem(data);
+
+        // Retrieve previously saved code from localStorage if it exists
+        const saved = localStorage.getItem(`codearena_editor_code_${problemId}`);
+        if (saved) {
+          try {
+            setCodeByLang(JSON.parse(saved));
+            setPageLoading(false);
+            return;
+          } catch (err) {
+            console.error("Error parsing saved code:", err);
+          }
+        }
+
+        // Initialize with default starter codes if not saved
         const starterByLang = { javascript: "", java: "", cpp: "" };
         const map = { javascript: "javascript", java: "java", "c++": "cpp" };
         (data.startCode || []).forEach((s) => {
@@ -214,20 +297,31 @@ export default function ProblemPage() {
   const handleRun = async () => {
     setLoading(true); setRunResult(null);
     setConsoleOpen(true); setConsoleTab("testcase");
+    clearMarkers();
     try {
       const { data } = await axiosClient.post(`/submission/run/${problemId}`, { code, language: lang });
       setRunResult(data);
+      if (!data.success && data.error) {
+        parseAndApplyErrors(data.error, lang);
+      }
     } catch (e) {
       setRunResult({ success: false, testCases: [], error: e.displayMessage });
+      if (e.displayMessage) {
+        parseAndApplyErrors(e.displayMessage, lang);
+      }
     } finally { setLoading(false); }
   };
 
   const handleSubmit = async () => {
     setLoading(true); setSubmitResult(null); setAiReview(null);
     setConsoleOpen(true); setConsoleTab("result");
+    clearMarkers();
     try {
       const { data } = await axiosClient.post(`/submission/submit/${problemId}`, { code, language: lang });
       setSubmitResult(data);
+      if (!data.accepted && data.error) {
+        parseAndApplyErrors(data.error, lang);
+      }
       setReviewing(true); setConsoleTab("review");
       axiosClient.post(`/agent/review/${problemId}`, { code, language: lang, accepted: data.accepted })
         .then(({ data: r }) => setAiReview(r))
@@ -235,6 +329,9 @@ export default function ProblemPage() {
         .finally(() => setReviewing(false));
     } catch (e) {
       setSubmitResult({ accepted: false, error: e.displayMessage });
+      if (e.displayMessage) {
+        parseAndApplyErrors(e.displayMessage, lang);
+      }
     } finally { setLoading(false); }
   };
 
@@ -248,6 +345,7 @@ export default function ProblemPage() {
   const tags       = Array.isArray(problem?.tags) ? problem.tags : [];
   const paramNames = Array.isArray(problem?.paramNames) ? problem.paramNames : [];
   const testCases  = runResult?.testCases || runResult?.testcases || [];
+  const isCompileError = runResult?.isCompileError || testCases.some(tc => (tc.status_id ?? tc.statusId) === 6);
   const CONSOLE_HEIGHT = 280;
 
   return (
@@ -402,7 +500,10 @@ export default function ProblemPage() {
         <div className="lc-right">
           <div className="lc-langbar">
             {["javascript", "java", "cpp"].map((l) => (
-              <button key={l} className={`lc-lang-btn${lang === l ? " active" : ""}`} onClick={() => setLang(l)}>
+              <button key={l} className={`lc-lang-btn${lang === l ? " active" : ""}`} onClick={() => {
+                setLang(l);
+                clearMarkers();
+              }}>
                 {LANG_LABELS[l]}
               </button>
             ))}
@@ -413,10 +514,25 @@ export default function ProblemPage() {
               height="100%"
               language={LANG_ID[lang]}
               value={code}
-              onChange={(v) => setCodeByLang((prev) => ({ ...prev, [lang]: v || "" }))}
+              onChange={(v) => {
+                setCodeByLang((prev) => {
+                  const updated = { ...prev, [lang]: v || "" };
+                  localStorage.setItem(`codearena_editor_code_${problemId}`, JSON.stringify(updated));
+                  return updated;
+                });
+                clearMarkers();
+              }}
               onMount={(e, monaco) => {
                 editorRef.current = e;
+                monacoRef.current = monaco;
                 e.focus();
+
+                // Suppress JS/TS semantic warnings like "Cannot find name 'require'" or type issues, but keep syntax checks
+                monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                  noSemanticValidation: true,
+                  noSyntaxValidation: false
+                });
+
                 e.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {});
                 e.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
                   e.trigger("keyboard", "editor.action.selectAll", null);
@@ -456,12 +572,34 @@ export default function ProblemPage() {
                     {!loading && runResult && (
                       <>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", background: runResult.success ? "rgba(0,184,163,0.1)" : "rgba(255,55,95,0.1)", color: runResult.success ? "#00b8a3" : "#ff375f" }}>
-                            {runResult.success ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
-                            {runResult.success ? "All visible tests passed" : "Some tests failed"}
-                          </span>
+                          {isCompileError ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", background: "rgba(255,55,95,0.1)", color: "#ff375f" }}>
+                              <XCircle size={11} />
+                              Compile Error
+                            </span>
+                          ) : (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", background: runResult.success ? "rgba(0,184,163,0.1)" : "rgba(255,55,95,0.1)", color: runResult.success ? "#00b8a3" : "#ff375f" }}>
+                              {runResult.success ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                              {runResult.success ? "All visible tests passed" : "Some tests failed"}
+                            </span>
+                          )}
                         </div>
-                        {testCases.map((tc, i) => (
+                        {runResult.error && (
+                          <pre style={{ 
+                            background: isDark ? "#282828" : "#f7f8fa", 
+                            border: `1px solid ${isDark ? "#3a3a3a" : "#e5e7eb"}`, 
+                            borderRadius: 10, 
+                            padding: 12, 
+                            color: "#ff375f", 
+                            fontFamily: "'JetBrains Mono',monospace", 
+                            fontSize: 12, 
+                            whiteSpace: "pre-wrap",
+                            marginBottom: 12 
+                          }}>
+                            {runResult.error}
+                          </pre>
+                        )}
+                        {!isCompileError && testCases.map((tc, i) => (
                           <RunCaseCard key={i} tc={tc} index={i} paramNames={paramNames} isDark={isDark} />
                         ))}
                       </>
@@ -479,8 +617,23 @@ export default function ProblemPage() {
                     {!loading && submitResult && (
                       <>
                         <div className={submitResult.accepted ? "lc-status-accept" : "lc-status-reject"} style={{ marginBottom: 8 }}>
-                          {submitResult.accepted ? "✓ Accepted" : "✗ " + (submitResult.error || "Wrong Answer")}
+                          {submitResult.accepted ? "✓ Accepted" : "✗ " + (submitResult.isCompileError ? "Compile Error" : "Wrong Answer")}
                         </div>
+                        {!submitResult.accepted && submitResult.error && (
+                          <pre style={{ 
+                            background: isDark ? "#282828" : "#f7f8fa", 
+                            border: `1px solid ${isDark ? "#3a3a3a" : "#e5e7eb"}`, 
+                            borderRadius: 10, 
+                            padding: 12, 
+                            color: "#ff375f", 
+                            fontFamily: "'JetBrains Mono',monospace", 
+                            fontSize: 12, 
+                            whiteSpace: "pre-wrap",
+                            marginBottom: 12 
+                          }}>
+                            {submitResult.error}
+                          </pre>
+                        )}
                         {submitResult.passedTestCases != null && (
                           <div style={{ fontSize: 13, color: isDark ? "#8d8d8d" : "#888", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>
                             {submitResult.passedTestCases} / {submitResult.totalTestCases} test cases passed

@@ -48,6 +48,10 @@ const register = async (req, res, next) => {
         res.cookie('token', token, COOKIE_OPTIONS);
         res.status(201).json({ user: buildUserReply(user), token, message: "Registered successfully" });
     } catch (err) {
+        if (err.code === 11000) {
+            err.message = "Email is already registered";
+            err.statusCode = 409;
+        }
         next(err);
     }
 };
@@ -56,16 +60,25 @@ const login = async (req, res, next) => {
     try {
         const { emailId, password } = req.body;
 
-        if (!emailId || !password)
-            throw new Error("Invalid credentials");
+        if (!emailId || !password) {
+            const error = new Error("Invalid credentials");
+            error.statusCode = 401;
+            throw error;
+        }
 
         const user = await User.findOne({ emailId });
-        if (!user)
-            throw new Error("Invalid credentials");
+        if (!user) {
+            const error = new Error("Invalid credentials");
+            error.statusCode = 401;
+            throw error;
+        }
 
         const match = await bcrypt.compare(password, user.password);
-        if (!match)
-            throw new Error("Invalid credentials");
+        if (!match) {
+            const error = new Error("Invalid credentials");
+            error.statusCode = 401;
+            throw error;
+        }
 
         const token = jwt.sign(
             { _id: user._id, emailId, role: user.role },

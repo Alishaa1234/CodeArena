@@ -14,12 +14,12 @@ import {
 } from "lucide-react";
 
 const LANG_LABELS = { javascript: "JavaScript", java: "Java", cpp: "C++" };
-const LANG_MAP    = { cpp: "c++", java: "java", javascript: "javascript" };
-const TAUNTS      = ["👀", "😈", "🔥", "💀", "⚡", "🤡", "😎", "🫡"];
+const LANG_MAP = { cpp: "c++", java: "java", javascript: "javascript" };
+const TAUNTS = ["👀", "😈", "🔥", "💀", "⚡", "🤡", "😎", "🫡"];
 const DIFF = {
-    easy:   { color: "#00b8a3", bg: "rgba(0,184,163,0.1)"  },
+    easy: { color: "#00b8a3", bg: "rgba(0,184,163,0.1)" },
     medium: { color: "#ffc01e", bg: "rgba(255,192,30,0.1)" },
-    hard:   { color: "#ff375f", bg: "rgba(255,55,95,0.1)"  },
+    hard: { color: "#ff375f", bg: "rgba(255,55,95,0.1)" },
 };
 
 // ── Countdown ─────────────────────────────────────────────────────────────────
@@ -56,12 +56,12 @@ function formatValue(raw = "") {
 
 // ── Example card ──────────────────────────────────────────────────────────────
 function ExampleCard({ example, index, paramNames, isDark }) {
-    const lines  = (example.input || "").split("\n").map(l => l.trim()).filter(Boolean);
+    const lines = (example.input || "").split("\n").map(l => l.trim()).filter(Boolean);
     const params = Array.isArray(paramNames) ? paramNames : [];
-    const bg     = isDark ? "#282828" : "#f7f8fa";
+    const bg = isDark ? "#282828" : "#f7f8fa";
     const border = isDark ? "#3a3a3a" : "#e5e7eb";
-    const muted  = isDark ? "#8d8d8d" : "#888";
-    const ink    = isDark ? "#eff1f6" : "#111";
+    const muted = isDark ? "#8d8d8d" : "#888";
+    const ink = isDark ? "#eff1f6" : "#111";
     return (
         <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10, marginBottom: 10, overflow: "hidden", fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>
             <div style={{ padding: "6px 14px", borderBottom: `1px solid ${border}` }}>
@@ -82,15 +82,15 @@ function ExampleCard({ example, index, paramNames, isDark }) {
                                     {li < lines.length - 1 && <span style={{ color: muted }}>,</span>}
                                 </span>
                             ))}
-                          </div>
+                        </div>
                 }
             </div>
             <div style={{ padding: "10px 14px", borderBottom: example.explanation ? `1px solid ${border}` : "none" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Output</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                     <span style={{ color: "#00b8a3", fontWeight: 600 }}>result</span>
-                     <span style={{ color: muted }}>=</span>
-                     <span style={{ color: ink }}>{formatValue(example.output || "")}</span>
+                    <span style={{ color: "#00b8a3", fontWeight: 600 }}>result</span>
+                    <span style={{ color: muted }}>=</span>
+                    <span style={{ color: ink }}>{formatValue(example.output || "")}</span>
                 </div>
             </div>
             {example.explanation && (
@@ -102,6 +102,30 @@ function ExampleCard({ example, index, paramNames, isDark }) {
         </div>
     );
 }
+
+const parseCppError = (msg) => {
+    if (!msg) return null;
+    const match = msg.match(/[a-zA-Z0-9_\-\.\/]+\.cpp:(\d+):(?:(\d+):)?\s*(?:error|warning):/i);
+    return match ? { line: parseInt(match[1], 10), column: match[2] ? parseInt(match[2], 10) : 1 } : null;
+};
+
+const parseJavaError = (msg) => {
+    if (!msg) return null;
+    const match = msg.match(/[a-zA-Z0-9_\-\.\/]+\.java:(\d+):(?:\d+:)?\s*(?:error|warning):/i);
+    return match ? { line: parseInt(match[1], 10), column: 1 } : null;
+};
+
+const parseNodeError = (msg) => {
+    if (!msg) return null;
+    const match = msg.match(/[a-zA-Z0-9_\-\.\/]+\.js:(\d+)/i);
+    return match ? { line: parseInt(match[1], 10), column: 1 } : null;
+};
+
+const parseGenericError = (msg) => {
+    if (!msg) return null;
+    const match = msg.match(/(?:line\s+)(\d+)/i);
+    return match ? { line: parseInt(match[1], 10), column: 1 } : null;
+};
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function DuelBattle({ socket }) {
@@ -125,23 +149,68 @@ export default function DuelBattle({ socket }) {
     } = useSelector((s) => s.duel);
     const { user } = useSelector((s) => s.auth);
 
-    const [lang,           setLang]           = useState("javascript");
-    const [codeMap,        setCodeMap]        = useState({});
+    const [lang, setLang] = useState("javascript");
+    const [codeMap, setCodeMap] = useState({});
     const [problemDataMap, setProblemDataMap] = useState({});
-    const [loading,        setLoading]        = useState(false);
-    const [runResult,      setRunResult]      = useState(null);
-    const [consoleOpen,    setConsoleOpen]    = useState(false);
-    const [consoleTab,     setConsoleTab]     = useState("testcase");
-    const [tauntToast,     setTauntToast]     = useState(null);
-    const [showDesc,       setShowDesc]       = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [runResult, setRunResult] = useState(null);
+    const [consoleOpen, setConsoleOpen] = useState(false);
+    const [consoleTab, setConsoleTab] = useState("testcase");
+    const [tauntToast, setTauntToast] = useState(null);
+    const [showDesc, setShowDesc] = useState(true);
     const editorRef = useRef(null);
+    const monacoRef = useRef(null);
 
-    const activeProblem     = problems[activeProblemIndex] || problems[0];
-    const activeCode        = codeMap[activeProblem?.problemId] || "";
-    const iSolvedActive     = mySolved.includes(activeProblem?.problemId);
+    const clearMarkers = () => {
+        if (editorRef.current && monacoRef.current) {
+            monacoRef.current.editor.setModelMarkers(editorRef.current.getModel(), "compiler", []);
+        }
+    };
+
+    const parseAndApplyErrors = (errorMessage, language) => {
+        if (!editorRef.current || !monacoRef.current || !errorMessage) return;
+        const model = editorRef.current.getModel();
+        if (!model) return;
+
+        let errorDetails = null;
+        if (language === "cpp") {
+            errorDetails = parseCppError(errorMessage);
+        } else if (language === "java") {
+            errorDetails = parseJavaError(errorMessage);
+        } else if (language === "javascript") {
+            errorDetails = parseNodeError(errorMessage);
+        }
+
+        if (!errorDetails) {
+            errorDetails = parseGenericError(errorMessage);
+        }
+
+        if (errorDetails) {
+            const { line, column } = errorDetails;
+            const lineCount = model.getLineCount();
+            const validLine = Math.max(1, Math.min(line, lineCount));
+            const maxColumn = model.getLineMaxColumn(validLine);
+            const validColumn = Math.max(1, Math.min(column || 1, maxColumn));
+
+            monacoRef.current.editor.setModelMarkers(model, "compiler", [
+                {
+                    startLineNumber: validLine,
+                    startColumn: 1,
+                    endLineNumber: validLine,
+                    endColumn: maxColumn,
+                    message: errorMessage,
+                    severity: monacoRef.current.MarkerSeverity.Error,
+                }
+            ]);
+        }
+    };
+
+    const activeProblem = problems[activeProblemIndex] || problems[0];
+    const activeCode = codeMap[activeProblem?.problemId] || "";
+    const iSolvedActive = mySolved.includes(activeProblem?.problemId);
     const activeProblemData = problemDataMap[activeProblem?.problemId] || null;
-    const paramNames        = Array.isArray(activeProblemData?.paramNames) ? activeProblemData.paramNames : [];
-    const ds                = DIFF[activeProblem?.difficulty] || DIFF.easy;
+    const paramNames = Array.isArray(activeProblemData?.paramNames) ? activeProblemData.paramNames : [];
+    const ds = DIFF[activeProblem?.difficulty] || DIFF.easy;
 
     // Timeout
     const timeoutFired = useRef(false);
@@ -168,7 +237,7 @@ export default function DuelBattle({ socket }) {
     // Lang change → reload starter
     useEffect(() => {
         if (!activeProblem?.problemId) return;
-        const pid  = activeProblem.problemId;
+        const pid = activeProblem.problemId;
         const data = problemDataMap[pid];
         if (!data) return;
         const starter = data.startCode?.find((s) => s.language === LANG_MAP[lang])?.initialCode || "";
@@ -183,25 +252,32 @@ export default function DuelBattle({ socket }) {
         return () => clearTimeout(id);
     }, [lastTaunt, dispatch]);
 
-    const myId         = user?._id?.toString();
-    const iAmHost      = opponent?.host?.userId === myId;
+    const myId = user?._id?.toString();
+    const iAmHost = opponent?.host?.userId === myId;
     const opponentSide = iAmHost ? opponent?.guest : opponent?.host;
     const opponentName = opponentSide?.username ?? "Opponent";
-    const myPct        = totalPoints > 0 ? Math.round((myPoints  / totalPoints) * 100) : 0;
-    const oppPct       = totalPoints > 0 ? Math.round((oppPoints / totalPoints) * 100) : 0;
+    const myPct = totalPoints > 0 ? Math.round((myPoints / totalPoints) * 100) : 0;
+    const oppPct = totalPoints > 0 ? Math.round((oppPoints / totalPoints) * 100) : 0;
 
     // Run
     const handleRun = async () => {
         if (!activeProblem) return;
         setLoading(true); setRunResult(null); setConsoleOpen(true); setConsoleTab("testcase");
+        clearMarkers();
         const pid = activeProblem.problemId;
         try {
             const { data } = await axiosClient.post(`/submission/run/${pid}`, { code: activeCode, language: lang });
             setRunResult(data);
             const passed = data.testCases?.filter((tc) => tc.status_id === 3).length ?? 0;
             socket?.emit("duel:update-status", { roomCode, problemId: pid, testsPassed: passed, totalTests: data.testCases?.length ?? 0 });
+            if (!data.success && data.error) {
+                parseAndApplyErrors(data.error, lang);
+            }
         } catch (e) {
             setRunResult({ success: false, testCases: [], error: e.displayMessage });
+            if (e.displayMessage) {
+                parseAndApplyErrors(e.displayMessage, lang);
+            }
         } finally { setLoading(false); }
     };
 
@@ -209,6 +285,7 @@ export default function DuelBattle({ socket }) {
     const handleSubmit = async () => {
         if (!activeProblem || iSolvedActive) return;
         setLoading(true); setConsoleOpen(true); setConsoleTab("result");
+        clearMarkers();
         const pid = activeProblem.problemId;
         try {
             const { data } = await axiosClient.post(`/submission/submit/${pid}`, { code: activeCode, language: lang });
@@ -218,9 +295,15 @@ export default function DuelBattle({ socket }) {
                 dispatch(problemSolved({ isMe: true, userId: myId, problemId: pid, points: activeProblem.points, totalPoints: myPoints + activeProblem.points }));
             } else {
                 socket?.emit("duel:update-status", { roomCode, problemId: pid, testsPassed: data.passedTestCases ?? 0, totalTests: data.totalTestCases ?? 0 });
+                if (data.error) {
+                    parseAndApplyErrors(data.error, lang);
+                }
             }
         } catch (e) {
             setRunResult({ accepted: false, error: e.displayMessage });
+            if (e.displayMessage) {
+                parseAndApplyErrors(e.displayMessage, lang);
+            }
         } finally { setLoading(false); }
     };
 
@@ -229,26 +312,27 @@ export default function DuelBattle({ socket }) {
     // Test case helpers
     const isTC = (tc) => {
         const sid = tc?.status_id ?? tc?.statusId;
-        if (typeof tc?.passed   === "boolean") return tc.passed;
+        if (typeof tc?.passed === "boolean") return tc.passed;
         if (typeof tc?.accepted === "boolean") return tc.accepted;
         if (sid != null) return sid === 3 || sid === "3";
-        return ["passed","accepted","ac"].includes((tc?.status ?? "").toLowerCase());
+        return ["passed", "accepted", "ac"].includes((tc?.status ?? "").toLowerCase());
     };
     const getF = (tc, f, fb = []) => {
         const v = [f, ...fb].map(k => tc?.[k]).filter(v => v != null && v !== "");
         return v.length ? v[0] : "—";
     };
-    const testCases     = runResult?.testCases || runResult?.testcases || [];
-    const tcPassed      = testCases.filter(isTC).length;
-    const tcTotal       = testCases.length;
+    const testCases = runResult?.testCases || runResult?.testcases || [];
+    const tcPassed = testCases.filter(isTC).length;
+    const tcTotal = testCases.length;
     const overallPassed = typeof runResult?.success === "boolean" ? runResult.success : tcTotal > 0 && testCases.every(isTC);
+    const isCompileError = runResult?.isCompileError || testCases.some(tc => (tc.status_id ?? tc.statusId) === 6);
 
     // Colors — matching ProblemPage exactly
-    const bg     = isDark ? "#1a1a1a" : "#ffffff";
-    const bg2    = isDark ? "#282828" : "#f7f8fa";
+    const bg = isDark ? "#1a1a1a" : "#ffffff";
+    const bg2 = isDark ? "#282828" : "#f7f8fa";
     const border = isDark ? "#3a3a3a" : "#e5e7eb";
-    const muted  = isDark ? "#8d8d8d" : "#6b7280";
-    const ink    = isDark ? "#eff1f6" : "#1a1a1a";
+    const muted = isDark ? "#8d8d8d" : "#6b7280";
+    const ink = isDark ? "#eff1f6" : "#1a1a1a";
 
     const CONSOLE_HEIGHT = 260;
 
@@ -353,10 +437,10 @@ export default function DuelBattle({ socket }) {
                     <div className="db-section">
                         <div className="db-section-title">Problems</div>
                         {problems.map((prob, idx) => {
-                            const iSolved     = mySolved.includes(prob.problemId);
+                            const iSolved = mySolved.includes(prob.problemId);
                             const oppSolvedIt = oppSolved.includes(prob.problemId);
-                            const oppProg     = oppProgress[prob.problemId];
-                            const dc          = DIFF[prob.difficulty] || DIFF.easy;
+                            const oppProg = oppProgress[prob.problemId];
+                            const dc = DIFF[prob.difficulty] || DIFF.easy;
                             return (
                                 <button key={prob.problemId}
                                     className={`db-prob-btn${activeProblemIndex === idx ? " active" : ""}${iSolved ? " solved" : ""}`}
@@ -377,7 +461,7 @@ export default function DuelBattle({ socket }) {
                                             </div>
                                         )}
                                     </div>
-                                    {iSolved      && <CheckCircle2 size={13} color="#00b8a3" style={{ flexShrink: 0 }} />}
+                                    {iSolved && <CheckCircle2 size={13} color="#00b8a3" style={{ flexShrink: 0 }} />}
                                     {oppSolvedIt && !iSolved && <Lock size={12} color="#ff375f" style={{ flexShrink: 0 }} />}
                                 </button>
                             );
@@ -473,7 +557,10 @@ export default function DuelBattle({ socket }) {
                             </button>
                         )}
                         {["javascript", "java", "cpp"].map((l) => (
-                            <button key={l} className={`db-lang-btn${lang === l ? " active" : ""}`} onClick={() => setLang(l)}>
+                            <button key={l} className={`db-lang-btn${lang === l ? " active" : ""}`} onClick={() => {
+                                setLang(l);
+                                clearMarkers();
+                            }}>
                                 {LANG_LABELS[l]}
                             </button>
                         ))}
@@ -490,8 +577,19 @@ export default function DuelBattle({ socket }) {
                             height="100%"
                             language={lang === "cpp" ? "cpp" : lang}
                             value={activeCode}
-                            onChange={(v) => setCodeMap((prev) => ({ ...prev, [activeProblem?.problemId]: v || "" }))}
-                            onMount={(e) => { editorRef.current = e; e.focus(); }}
+                            onChange={(v) => {
+                                setCodeMap((prev) => ({ ...prev, [activeProblem?.problemId]: v || "" }));
+                                clearMarkers();
+                            }}
+                            onMount={(e, monaco) => {
+                                editorRef.current = e;
+                                monacoRef.current = monaco;
+                                e.focus();
+                                monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                                    noSemanticValidation: true,
+                                    noSyntaxValidation: false
+                                });
+                            }}
                             theme={isDark ? "vs-dark" : "vs"}
                             options={{
                                 fontSize: 14, minimap: { enabled: false }, scrollBeyondLastLine: false,
@@ -521,16 +619,38 @@ export default function DuelBattle({ socket }) {
                                 {!loading && consoleTab === "testcase" && runResult && (
                                     <>
                                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", background: overallPassed ? "rgba(0,184,163,0.1)" : "rgba(255,55,95,0.1)", color: overallPassed ? "#00b8a3" : "#ff375f" }}>
-                                                {overallPassed ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
-                                                {overallPassed ? `All tests passed (${tcPassed}/${tcTotal})` : `Some tests failed (${tcPassed}/${tcTotal})`}
-                                            </span>
+                                            {isCompileError ? (
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", background: "rgba(255,55,95,0.1)", color: "#ff375f" }}>
+                                                    <XCircle size={11} />
+                                                    Compile Error
+                                                </span>
+                                            ) : (
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", background: overallPassed ? "rgba(0,184,163,0.1)" : "rgba(255,55,95,0.1)", color: overallPassed ? "#00b8a3" : "#ff375f" }}>
+                                                    {overallPassed ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                                                    {overallPassed ? `All tests passed (${tcPassed}/${tcTotal})` : `Some tests failed (${tcPassed}/${tcTotal})`}
+                                                </span>
+                                            )}
                                         </div>
-                                        {testCases.map((tc, i) => {
-                                            const passed   = isTC(tc);
-                                            const input    = getF(tc, "stdin",           ["input"]);
+                                        {runResult.error && (
+                                            <pre style={{ 
+                                                background: isDark ? "#282828" : "#f7f8fa", 
+                                                border: `1px solid ${border}`, 
+                                                borderRadius: 10, 
+                                                padding: 12, 
+                                                color: "#ff375f", 
+                                                fontFamily: "'JetBrains Mono',monospace", 
+                                                fontSize: 12, 
+                                                whiteSpace: "pre-wrap",
+                                                marginBottom: 10 
+                                            }}>
+                                                {runResult.error}
+                                            </pre>
+                                        )}
+                                        {!isCompileError && testCases.map((tc, i) => {
+                                            const passed = isTC(tc);
+                                            const input = getF(tc, "stdin", ["input"]);
                                             const expected = getF(tc, "expected_output", ["expected"]);
-                                            const output   = getF(tc, "stdout",          ["stderr", "output"]);
+                                            const output = getF(tc, "stdout", ["stderr", "output"]);
                                             return (
                                                 <div key={i} className="db-tc-card">
                                                     <div style={{ padding: "7px 12px", borderBottom: `1px solid ${border}`, display: "flex", alignItems: "center", gap: 8, background: passed ? "rgba(0,184,163,0.05)" : "rgba(255,55,95,0.05)" }}>
@@ -554,10 +674,25 @@ export default function DuelBattle({ socket }) {
                                 )}
                                 {!loading && consoleTab === "result" && runResult && (
                                     <>
-                                        <div style={{ fontSize: 16, fontWeight: 800, color: runResult.accepted ? "#00b8a3" : "#ff375f", marginBottom: 8 }}>
-                                            {runResult.accepted ? `✓ Accepted (+${activeProblem?.points} pts)` : `✗ ${runResult.error || "Wrong Answer"}`}
+                                        <div style={{ fontSize: 16, fontWeight: 800, color: (runResult.accepted && !isCompileError) ? "#00b8a3" : "#ff375f", marginBottom: 8 }}>
+                                            {isCompileError ? "✗ Compile Error" : runResult.accepted ? `✓ Accepted (+${activeProblem?.points} pts)` : `✗ Wrong Answer`}
                                         </div>
-                                        {runResult.passedTestCases != null && (
+                                        {((!runResult.accepted && runResult.error) || isCompileError) && (
+                                            <pre style={{ 
+                                                background: isDark ? "#282828" : "#f7f8fa", 
+                                                border: `1px solid ${border}`, 
+                                                borderRadius: 10, 
+                                                padding: 12, 
+                                                color: "#ff375f", 
+                                                fontFamily: "'JetBrains Mono',monospace", 
+                                                fontSize: 12, 
+                                                whiteSpace: "pre-wrap",
+                                                marginBottom: 10 
+                                            }}>
+                                                {runResult.error}
+                                            </pre>
+                                        )}
+                                        {runResult.passedTestCases != null && !isCompileError && (
                                             <div style={{ fontSize: 13, color: muted, fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>
                                                 {runResult.passedTestCases} / {runResult.totalTestCases} test cases passed
                                             </div>

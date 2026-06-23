@@ -198,6 +198,14 @@ export default function ATSAnalyzer() {
     const scoreColor = score >= 80 ? "#22c55e" : score >= 60 ? "#f59e0b" : "#ef4444";
     const scoreLabel = score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Average" : "Needs Work";
 
+    // Profile-aware badge
+    const profileConfig = {
+        student:      { icon: "🎓", label: "Student",      color: "#a78bfa", bg: "rgba(167,139,250,0.10)" },
+        early_career: { icon: "🚀", label: "Early Career", color: "#38bdf8", bg: "rgba(56,189,248,0.10)" },
+        professional: { icon: "💼", label: "Professional", color: "#22c55e", bg: "rgba(34,197,94,0.10)" },
+    };
+    const profile = profileConfig[report?.candidateProfile] || profileConfig.professional;
+
     const severityColor = (sev) => {
         if (sev === "critical")  return { bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.25)", text: "#f87171", icon: "🔴" };
         if (sev === "important") return { bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.25)", text: "#fbbf24", icon: "🟡" };
@@ -389,7 +397,7 @@ export default function ATSAnalyzer() {
                                         { key: "nlp",         label: "NLP pipeline (TF-IDF)",    pct: 15 },
                                         { key: "keywords",    label: "AI keyword extraction",    pct: 30 },
                                         { key: "sections",    label: "Section analysis",         pct: 45 },
-                                        { key: "scoring",     label: "Weighted scoring",         pct: 55 },
+                                        { key: "scoring",     label: "Profile-aware scoring",    pct: 55 },
                                         { key: "llm",         label: "AI gap analysis",          pct: 70 },
                                         { key: "suggestions", label: "Build recommendations",    pct: 85 },
                                         { key: "saving",      label: "Save report",              pct: 95 },
@@ -568,8 +576,19 @@ export default function ATSAnalyzer() {
                                 </div>
 
                                 <div style={{ flex:1, minWidth:250 }}>
-                                    <div style={{ fontSize:22, fontWeight:800, color:"#fff", marginBottom:8, fontFamily:"'Sora',sans-serif" }}>
+                                    <div style={{ fontSize:22, fontWeight:800, color:"#fff", marginBottom:8, fontFamily:"'Sora',sans-serif", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
                                         ATS Score for {report.role}
+                                        {/* Profile Badge */}
+                                        {report.candidateProfile && (
+                                            <span style={{
+                                                display:"inline-flex", alignItems:"center", gap:5,
+                                                padding:"4px 12px", borderRadius:20, fontSize:11, fontWeight:700,
+                                                background:profile.bg, border:`1px solid ${profile.color}40`,
+                                                color:profile.color, fontFamily:"'JetBrains Mono',monospace",
+                                            }}>
+                                                {profile.icon} {profile.label}
+                                            </span>
+                                        )}
                                     </div>
 
                                     {/* LLM Justification */}
@@ -648,6 +667,110 @@ export default function ATSAnalyzer() {
                                                         <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.5)", fontFamily:"'JetBrains Mono',monospace" }}>{m.value}</span>
                                                     </div>
                                                 ))}
+                                            </div>
+                                        )}
+
+                                        {/* Profile Analysis Card */}
+                                        {report.candidateProfile && (
+                                            <div className="ats-card">
+                                                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                                                    <span style={{ fontSize:16 }}>{profile.icon}</span>
+                                                    <div className="ats-label" style={{ margin:0 }}>Candidate Profile</div>
+                                                </div>
+                                                <div style={{ padding:"10px 14px", borderRadius:10, background:profile.bg, border:`1px solid ${profile.color}30`, marginBottom:12 }}>
+                                                    <div style={{ fontSize:14, fontWeight:700, color:profile.color, marginBottom:4 }}>
+                                                        {profile.icon} {profile.label} Profile
+                                                    </div>
+                                                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>
+                                                        {report.candidateProfile === "student"
+                                                            ? "Scoring adjusted for academic focus & projects"
+                                                            : report.candidateProfile === "early_career"
+                                                                ? "Balanced weighting for internships & projects"
+                                                                : "Full professional experience weighting"}
+                                                    </div>
+                                                </div>
+                                                {/* Quantified Impact */}
+                                                {report.quantifiedImpact && (
+                                                    <div style={{ marginBottom:10 }}>
+                                                        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                                                            <span style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>Quantified Impact</span>
+                                                            <span style={{ fontSize:11, fontWeight:700, color: report.quantifiedImpact.score >= 7 ? "#22c55e" : report.quantifiedImpact.score >= 4 ? "#f59e0b" : "#ef4444", fontFamily:"'JetBrains Mono',monospace" }}>
+                                                                {report.quantifiedImpact.score}/10
+                                                            </span>
+                                                        </div>
+                                                        <div style={{ height:6, background:"rgba(255,255,255,0.06)", borderRadius:3, overflow:"hidden" }}>
+                                                            <div style={{
+                                                                height:"100%", borderRadius:3,
+                                                                width:`${(report.quantifiedImpact.score || 0) * 10}%`,
+                                                                background: report.quantifiedImpact.score >= 7 ? "linear-gradient(90deg,#22c55e,#4ade80)" : report.quantifiedImpact.score >= 4 ? "linear-gradient(90deg,#f59e0b,#fbbf24)" : "linear-gradient(90deg,#ef4444,#f87171)",
+                                                                transition:"width 1s ease",
+                                                            }} />
+                                                        </div>
+                                                        {report.quantifiedImpact.patterns && report.quantifiedImpact.patterns.length > 0 && (
+                                                            <div style={{ marginTop:8 }}>
+                                                                {report.quantifiedImpact.patterns.slice(0, 3).map((p, i) => (
+                                                                    <div key={i} style={{ fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace", padding:"2px 0" }}>
+                                                                        ✓ {p}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                {/* Action Verbs */}
+                                                {report.actionVerbs && report.actionVerbs.count > 0 && (
+                                                    <div>
+                                                        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                                                            <span style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace" }}>Action Verbs</span>
+                                                            <span style={{ fontSize:11, fontWeight:700, color:report.actionVerbs.hasStrongVerbs ? "#22c55e" : "#f59e0b", fontFamily:"'JetBrains Mono',monospace" }}>
+                                                                {report.actionVerbs.count} found
+                                                            </span>
+                                                        </div>
+                                                        <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:4 }}>
+                                                            {report.actionVerbs.verbs.slice(0, 8).map((v, i) => (
+                                                                <span key={i} style={{ padding:"2px 8px", borderRadius:12, fontSize:10, fontFamily:"'JetBrains Mono',monospace", background:"rgba(34,197,94,0.08)", border:"1px solid rgba(34,197,94,0.2)", color:"#4ade80" }}>
+                                                                    {v}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Audit Flags */}
+                                        {report.flags && report.flags.length > 0 && (
+                                            <div className="ats-card">
+                                                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+                                                    <Shield size={13} color="#f59e0b" />
+                                                    <div className="ats-label" style={{ margin:0 }}>Audit Flags</div>
+                                                    <span style={{ fontSize:10, fontWeight:700, color:"#f59e0b", fontFamily:"'JetBrains Mono',monospace", marginLeft:"auto" }}>
+                                                        {report.flags.length} issue{report.flags.length !== 1 ? "s" : ""}
+                                                    </span>
+                                                </div>
+                                                {report.flags.map((f, i) => {
+                                                    const sc = severityColor(f.severity);
+                                                    return (
+                                                        <div key={i} style={{
+                                                            background:sc.bg, border:`1px solid ${sc.border}`,
+                                                            borderRadius:10, padding:"10px 14px", marginBottom:8,
+                                                            animation:`fadeIn 0.3s ease-out ${i * 0.05}s backwards`,
+                                                        }}>
+                                                            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
+                                                                <span style={{ fontSize:10 }}>{sc.icon}</span>
+                                                                <span style={{ fontSize:11, fontWeight:700, color:sc.text, fontFamily:"'JetBrains Mono',monospace", textTransform:"capitalize" }}>
+                                                                    {(f.flag || "").replace(/_/g, " ")}
+                                                                </span>
+                                                                <span style={{ fontSize:9, padding:"1px 6px", borderRadius:8, background:`${sc.text}15`, color:sc.text, fontFamily:"'JetBrains Mono',monospace", marginLeft:"auto" }}>
+                                                                    {f.severity}
+                                                                </span>
+                                                            </div>
+                                                            <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:"'JetBrains Mono',monospace", lineHeight:1.5 }}>
+                                                                {f.message}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         )}
 

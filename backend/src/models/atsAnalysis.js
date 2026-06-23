@@ -73,6 +73,29 @@ const atsAnalysisSchema = new Schema(
             gap:        { type: Number },
         },
 
+        // ── Profile-Aware Scoring (Jobsy integration) ────────────
+        candidateProfile: {
+            type: String,
+            enum: ["student", "early_career", "professional"],
+            default: "professional",
+        },
+        flags: [{
+            flag:     { type: String },
+            severity: { type: String, enum: ["critical", "important", "nice-to-have"] },
+            message:  { type: String },
+        }],
+        quantifiedImpact: {
+            score:    { type: Number, min: 0, max: 10, default: 0 },
+            patterns: [{ type: String }],
+            count:    { type: Number, default: 0 },
+        },
+        actionVerbs: {
+            verbs:          [{ type: String }],
+            count:          { type: Number, default: 0 },
+            hasStrongVerbs: { type: Boolean, default: false },
+        },
+        profileSignals: [{ type: String }],
+
         // ── AI-Generated Content ─────────────────────────────────
         suggestions: {
             missingKeywords: [{

@@ -29,6 +29,11 @@ const submitBatch = async (submissions) => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const decodeB64 = (str) => {
+    if (!str) return str;
+    return Buffer.from(str, 'base64').toString('utf-8');
+};
+
 const submitToken = async (resultToken) => {
     let attempts = 0;
     const maxAttempts = 20; // wait up to 20 seconds total
@@ -37,7 +42,7 @@ const submitToken = async (resultToken) => {
         const response = await judge0.get('/submissions/batch', {
             params: {
                 tokens: resultToken.join(","),
-                base64_encoded: 'false',
+                base64_encoded: 'true',
                 fields: '*',
             },
         });
@@ -45,7 +50,15 @@ const submitToken = async (resultToken) => {
         const { submissions } = response.data;
         const allDone = submissions.every((r) => r.status_id > 2);
 
-        if (allDone) return submissions;
+        if (allDone) {
+            return submissions.map(sub => ({
+                ...sub,
+                stdout: decodeB64(sub.stdout),
+                stderr: decodeB64(sub.stderr),
+                compile_output: decodeB64(sub.compile_output),
+                message: decodeB64(sub.message),
+            }));
+        }
 
         await sleep(1000);
         attempts++;

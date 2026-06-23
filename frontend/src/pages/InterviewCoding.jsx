@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import Editor from "@monaco-editor/react";
 import axiosClient from "../utils/axiosClient";
@@ -12,6 +12,30 @@ const DIFF_STYLE   = {
     easy:   { color: "#22c55e", bg: "rgba(34,197,94,0.12)",  border: "rgba(34,197,94,0.3)"  },
     medium: { color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.3)" },
     hard:   { color: "#ef4444", bg: "rgba(239,68,68,0.12)",  border: "rgba(239,68,68,0.3)"  },
+};
+
+const parseCppError = (msg) => {
+    if (!msg) return null;
+    const match = msg.match(/[a-zA-Z0-9_\-\.\/]+\.cpp:(\d+):(?:(\d+):)?\s*(?:error|warning):/i);
+    return match ? { line: parseInt(match[1], 10), column: match[2] ? parseInt(match[2], 10) : 1 } : null;
+};
+
+const parseJavaError = (msg) => {
+    if (!msg) return null;
+    const match = msg.match(/[a-zA-Z0-9_\-\.\/]+\.java:(\d+):(?:\d+:)?\s*(?:error|warning):/i);
+    return match ? { line: parseInt(match[1], 10), column: 1 } : null;
+};
+
+const parseNodeError = (msg) => {
+    if (!msg) return null;
+    const match = msg.match(/[a-zA-Z0-9_\-\.\/]+\.js:(\d+)/i);
+    return match ? { line: parseInt(match[1], 10), column: 1 } : null;
+};
+
+const parseGenericError = (msg) => {
+    if (!msg) return null;
+    const match = msg.match(/(?:line\s+)(\d+)/i);
+    return match ? { line: parseInt(match[1], 10), column: 1 } : null;
 };
 
 export default function InterviewCoding() {
@@ -28,6 +52,52 @@ export default function InterviewCoding() {
     const [submitting,  setSubmitting]  = useState(false);
     const [results,     setResults]     = useState({}); // { problemId: result }
     const [timeLeft,    setTimeLeft]    = useState(60 * 60); // 60 min for 3 problems
+    const editorRef = useRef(null);
+    const monacoRef = useRef(null);
+
+    const clearMarkers = () => {
+        if (editorRef.current && monacoRef.current) {
+            monacoRef.current.editor.setModelMarkers(editorRef.current.getModel(), "compiler", []);
+        }
+    };
+
+    const parseAndApplyErrors = (errorMessage, language) => {
+        if (!editorRef.current || !monacoRef.current || !errorMessage) return;
+        const model = editorRef.current.getModel();
+        if (!model) return;
+
+        let errorDetails = null;
+        if (language === "cpp") {
+            errorDetails = parseCppError(errorMessage);
+        } else if (language === "java") {
+            errorDetails = parseJavaError(errorMessage);
+        } else if (language === "javascript") {
+            errorDetails = parseNodeError(errorMessage);
+        }
+
+        if (!errorDetails) {
+            errorDetails = parseGenericError(errorMessage);
+        }
+
+        if (errorDetails) {
+            const { line, column } = errorDetails;
+            const lineCount = model.getLineCount();
+            const validLine = Math.max(1, Math.min(line, lineCount));
+            const maxColumn = model.getLineMaxColumn(validLine);
+            const validColumn = Math.max(1, Math.min(column || 1, maxColumn));
+
+            monacoRef.current.editor.setModelMarkers(model, "compiler", [
+                {
+                    startLineNumber: validLine,
+                    startColumn: 1,
+                    endLineNumber: validLine,
+                    endColumn: maxColumn,
+                    message: errorMessage,
+                    severity: monacoRef.current.MarkerSeverity.Error,
+                }
+            ]);
+        }
+    };
 
     const problem    = problems[currentIdx];
     const code       = codeByProb[problem?._id]?.[lang] || "";
@@ -122,6 +192,7 @@ export default function InterviewCoding() {
             ...prev,
             [problem._id]: { ...(prev[problem._id] || {}), [lang]: val || "" },
         }));
+        clearMarkers();
     };
 
     const updateExplanation = (val) => {
@@ -132,6 +203,7 @@ export default function InterviewCoding() {
     const handleSubmit = async () => {
         if (!code.trim() || submitting) return;
         setSubmitting(true);
+        clearMarkers();
         try {
             const { data } = await axiosClient.post("/api/interview/evaluate-code", {
                 interviewId,
@@ -143,8 +215,14 @@ export default function InterviewCoding() {
                 problemDescription: (problem?.description || "").replace(/<[^>]*>/g, ""),
             });
             setResults(prev => ({ ...prev, [problem._id]: data }));
+            if (data.error) {
+                parseAndApplyErrors(data.error, lang);
+            }
         } catch (err) {
             console.error(err);
+            if (err.displayMessage) {
+                parseAndApplyErrors(err.displayMessage, lang);
+            }
         } finally {
             setSubmitting(false);
         }
@@ -357,7 +435,10 @@ export default function InterviewCoding() {
                 <div className="ic-right">
                     <div className="ic-langbar">
                         {["javascript","java","cpp"].map(l => (
-                            <button key={l} className={`ic-lang-btn${lang === l ? " active" : ""}`} onClick={() => setLang(l)}>
+                            <button key={l} className={`ic-lang-btn${lang === l ? " active" : ""}`} onClick={() => {
+                                setLang(l);
+                                clearMarkers();
+                            }}>
                                 {LANG_LABELS[l]}
                             </button>
                         ))}
@@ -373,6 +454,17 @@ export default function InterviewCoding() {
                             language={MONACO_LANGS[lang]}
                             value={code}
                             onChange={updateCode}
+                            onMount={(e, monaco) => {
+                                editorRef.current = e;
+                                monacoRef.current = monaco;
+                                e.focus();
+
+                                // Suppress semantic warnings for JS/TS, but keep syntax checks
+                                monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                                    noSemanticValidation: true,
+                                    noSyntaxValidation: false
+                                });
+                            }}
                             theme="vs-dark"
                             options={{
                                 fontSize:             14,

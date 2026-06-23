@@ -76,6 +76,18 @@ const TECH_TERMS = new Set([
     "cloudformation","cdk","sam","sqs","sns","eventbridge",
 ]);
 
+// ── Section Weights ───────────────────────────────────────────────────────────
+// Keywords found in higher-weight sections are more significant for ATS matching.
+const SECTION_WEIGHTS = {
+    skills:      1.5,
+    experience:  1.4,
+    projects:    1.3,
+    summary:     1.1,
+    education:   0.9,
+    contact:     0.5,
+    default:     1.0,
+};
+
 // ── Tokenizer ─────────────────────────────────────────────────────────────────
 /**
  * Tokenize text into normalized word tokens.
@@ -346,6 +358,112 @@ function computeFitScore(resumeText, jdText) {
     };
 }
 
+
+// ── Section-Weighted Keyword Score ────────────────────────────────────────────
+/**
+ * Apply section-based multipliers to keyword matching.
+ * Keywords found in high-value sections (skills, experience) get boosted weight.
+ * 
+ * @param {string} resumeText - Full resume text
+ * @param {object} sectionData - Section detection from LLM ({ sections: { skills: { present, ... } } })
+ * @param {string[]} jdKeywords - Keywords from the job description
+ * @returns {{ sectionWeightedScore: number, sectionMatches: object }}
+ */
+function computeSectionWeightedScore(resumeText, sectionData, jdKeywords) {
+    if (!jdKeywords || jdKeywords.length === 0) {
+        return { sectionWeightedScore: 0, sectionMatches: {} };
+    }
+
+    const resumeLower = resumeText.toLowerCase();
+    const sections = sectionData?.sections || {};
+    
+    // Try to estimate section boundaries from the resume text
+    // We look for common section headers and assign subsequent text to that section
+    const sectionRegions = detectSectionRegions(resumeLower);
+    
+    let totalWeight = 0;
+    let matchedWeight = 0;
+    const sectionMatches = {};
+
+    for (const kw of jdKeywords) {
+        const kwLower = kw.toLowerCase();
+        if (!resumeLower.includes(kwLower)) continue;
+
+        // Find which section this keyword appears in
+        let bestSection = "default";
+        let bestWeight = SECTION_WEIGHTS.default;
+
+        for (const [section, { start, end }] of Object.entries(sectionRegions)) {
+            const sectionText = resumeLower.slice(start, end);
+            if (sectionText.includes(kwLower)) {
+                const weight = SECTION_WEIGHTS[section] || SECTION_WEIGHTS.default;
+                if (weight > bestWeight) {
+                    bestSection = section;
+                    bestWeight = weight;
+                }
+            }
+        }
+
+        matchedWeight += bestWeight;
+        totalWeight += SECTION_WEIGHTS.skills; // Max possible weight per keyword
+
+        if (!sectionMatches[bestSection]) sectionMatches[bestSection] = [];
+        sectionMatches[bestSection].push(kw);
+    }
+
+    // Also count missing keywords against the max
+    const missedCount = jdKeywords.filter(kw => !resumeLower.includes(kw.toLowerCase())).length;
+    totalWeight += missedCount * SECTION_WEIGHTS.skills;
+
+    const sectionWeightedScore = totalWeight > 0
+        ? Math.round((matchedWeight / totalWeight) * 100)
+        : 0;
+
+    return { sectionWeightedScore, sectionMatches };
+}
+
+
+/**
+ * Detect approximate section regions in resume text by looking for common headers.
+ * Returns a map of section name → { start, end } character indices.
+ */
+function detectSectionRegions(text) {
+    const headers = [
+        { name: "contact",    patterns: [/\b(contact|personal)\s*(info|information|details)?\b/i] },
+        { name: "summary",    patterns: [/\b(summary|profile|objective|about\s*me)\b/i] },
+        { name: "skills",     patterns: [/\b(skills|technical\s*skills|technologies|tech\s*stack|competencies)\b/i] },
+        { name: "experience", patterns: [/\b(experience|work\s*experience|employment|professional\s*experience|work\s*history)\b/i] },
+        { name: "education",  patterns: [/\b(education|academic|qualifications|degrees?)\b/i] },
+        { name: "projects",   patterns: [/\b(projects|personal\s*projects|key\s*projects|academic\s*projects)\b/i] },
+    ];
+
+    const regions = {};
+    const boundaries = [];
+
+    for (const { name, patterns } of headers) {
+        for (const pattern of patterns) {
+            const match = text.match(pattern);
+            if (match) {
+                boundaries.push({ name, index: match.index });
+                break; // First match per section is enough
+            }
+        }
+    }
+
+    // Sort by position in text
+    boundaries.sort((a, b) => a.index - b.index);
+
+    // Assign regions
+    for (let i = 0; i < boundaries.length; i++) {
+        const start = boundaries[i].index;
+        const end = i + 1 < boundaries.length ? boundaries[i + 1].index : text.length;
+        regions[boundaries[i].name] = { start, end };
+    }
+
+    return regions;
+}
+
+
 module.exports = {
     tokenize,
     computeTF,
@@ -355,6 +473,8 @@ module.exports = {
     extractSkillEntities,
     categorizeKeywords,
     computeFitScore,
+    computeSectionWeightedScore,
     TECH_TERMS,
     STOPWORDS,
+    SECTION_WEIGHTS,
 };

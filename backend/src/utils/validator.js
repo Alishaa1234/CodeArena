@@ -8,16 +8,25 @@ const validate = (data)=>{
 
     const IsAllowed = mandatoryField.every((k)=> Object.keys(data).includes(k));
 
-    if(!IsAllowed)
-        throw new Error("Some Field Missing");
+    if(!IsAllowed) {
+        const error = new Error("Some Field Missing");
+        error.statusCode = 400;
+        throw error;
+    }
 
-    if(!validator.isEmail(data.emailId))
-        throw new Error("Invalid Email");
+    if(!validator.isEmail(data.emailId)) {
+        const error = new Error("Invalid Email");
+        error.statusCode = 400;
+        throw error;
+    }
 
     if(!validator.isStrongPassword(data.password, {
-    minLength: 8, minLowercase: 1, minUppercase: 0, minNumbers: 0, minSymbols: 0
-}))
-    throw new Error("Weak Password");
+        minLength: 8, minLowercase: 1, minUppercase: 0, minNumbers: 0, minSymbols: 0
+    })) {
+        const error = new Error("Weak Password");
+        error.statusCode = 400;
+        throw error;
+    }
 }
 
 module.exports = validate;
