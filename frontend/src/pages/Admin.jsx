@@ -1,7 +1,3 @@
-/* PAGE: Admin
-   PURPOSE: The entry point for the administrative section of the application.
-*/
-
 import { NavLink } from "react-router";
 import { Plus, Trash2, Video, ArrowLeft, Code2 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
